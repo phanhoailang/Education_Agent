@@ -1,0 +1,22 @@
+{
+  "content": "## **Chương 1: Giới thiệu về Giải Tích**\n\nGiải tích là một nhánh quan trong của toán học, nghiên cứu về giới hạn, đạo hàm, tích phân và chuỗi. Nó được ứng dụng rộng rãi trong khoa học, kỹ thuật và kinh tế học.\n\n## **Giới hạn là nền tảng cho khái niệm đạo hàm và tích phân.**\n\n- Hiểu được khái niệm giới hạn.\n- Áp dụng đạo hàm trong các bài toán vật lý.\n- Tính diện tích dưới đường cong bằng tích phân.\n\nCông thức đạo hàm: f'(x) =  $\\lim_{h\\to 0}$  $f(x+h) - f(x)$ ℎ\n\nPhương trình bậc hai:  $ax^2 + bx + c = 0$ \n\nCông thức diện tích hình tròn:  $S = \\pi r^2$ \n\nTích phân xác định:  $\\int_a^b f(x) dx$ \n\nĐạo hàm cấp hai:  $f''(x) = \\frac{d^2y}{dx^2}$  $dx^2$ \n\nChuỗi Fourier:  $f(x) = \\frac{a_0}{x}$  $\\frac{a_0}{2} + \\sum [a_n \\cos(n\\omega x) + b_n \\sin(n\\omega x)]$ \n\nMa trận:  $A = [a_{ij}]$  với i,  $j \\in \\mathbb{N}$ \n\nGradient:  $\\nabla f(x, y) = \\left(\\frac{\\partial f}{\\partial y}\\right)^2$  $\\frac{\\partial f}{\\partial x}, \\frac{\\partial f}{\\partial y}$  $\\frac{\\partial I}{\\partial y}$ \n\nHàm lượng giác:  $\\sin^2 x + \\cos^2 x = 1$ \n\n$$\ne^x = \\lim_{n \\to \\infty} \\left( 1 + \\frac{1}{n} \\right)^n\n$$\n\nHàm mũ:\n\n## **Chương 2: Đại số tuyến tính**\n\nĐại số tuyến tính nghiên cứu các vector, ma trận, không gian vector và các phép biến đổi tuyến tính. Đây là công cụ quan trọng trong trí tuệ nhân tạo, khoa học dữ liệu và xử lý ảnh.\n\n## **Ma trận là công cụ biểu diễn hệ phương trình tuyến tính.**\n\n- Khái niệm vector và không gian vector.\n- Phép nhân ma trân và định thức.\n\n• Ứng dụng trong học máy và thị giác máy tính.",
+  "metadata": {
+    "title": null,
+    "author": null,
+    "creation_date": null,
+    "modification_date": null,
+    "language": null,
+    "page_count": null,
+    "file_size": null,
+    "format": "DocumentFormat.PDF",
+    "processing_time": 80.73990988731384,
+    "confidence_score": null,
+    "extracted_elements": {}
+  },
+  "images": [],
+  "tables": [],
+  "formulas": [],
+  "chunks": [],
+  "success": true,
+  "error_message": null
+}

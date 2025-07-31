@@ -1,0 +1,27 @@
+{
+  "content": "## **Chương 1: Giới thiệu về Giải Tích**\n\nGiải tích là một nhánh quan trong của toán học, nghiên cứu về giới hạn, đạo hàm, tích phân và chuỗi. Nó được ứng dụng rộng rãi trong khoa học, kỹ thuật và kinh tế học.\n\n- **Giới hạn là nền tảng cho khái niệm đạo hàm và tích phân.**\n- Hiểu được khái niệm giới hạn.\n\nÁp dụng đạo hàm trong các bài toán vật lý.\n\nTính diện tích dưới đường cong bằng tích phân.\n\nCông thức đạo hàm:  $f'(x) = \\lim_{h \\to 0} \\frac{f(x+h) - f(x)}{h}$ \n\nCông thức diện tích hình tròn:  $S = \\pi r^2$ \n\nPhương trình bậc hai  $ax^2 + bx + c = 0$ \n\nGradient:  $\\nabla f(x, y) = \\left(\\frac{\\partial f}{\\partial x}, \\frac{\\partial f}{\\partial y}\\right)$ \n\nĐạo hàm cấp hai:  $f''(x) = \\frac{d^2y}{dx^2}$ \n\nPhương trình bậc hai:  $ax^2 + bx + c = 0$",
+  "metadata": {
+    "title": "sample_math_slides",
+    "author": null,
+    "creation_date": null,
+    "modification_date": null,
+    "language": null,
+    "page_count": null,
+    "file_size": null,
+    "format": "DocumentFormat.PPTX",
+    "processing_time": 47.841933488845825,
+    "confidence_score": null,
+    "extracted_elements": {
+      "slides": 0,
+      "tables": 0,
+      "images": 0,
+      "formulas": 0
+    }
+  },
+  "images": [],
+  "tables": [],
+  "formulas": [],
+  "chunks": [],
+  "success": true,
+  "error_message": null
+}
