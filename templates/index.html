@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Edu Mate</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/form.css') }}" />
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+      integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <div class="header-content">
+          <div class="logo">
+            <div class="ai-icon">🤖</div>
+            <h1 class="title">Edu Mate</h1>
+          </div>
+          <p class="subtitle">
+            Trợ lý AI thông minh để tạo kế hoạch giảng dạy và bài kiểm tra tùy
+            chỉnh
+          </p>
+        </div>
+      </div>
+
+      <div class="form-container">
+        <form id="eduForm" method="POST" action="/process">
+          <div class="form-grid">
+            <div class="input-group">
+              <label class="label" for="grade">Khối lớp*</label>
+              <select class="select" id="grade" name="grade" required>
+                <option value="">Chọn khối lớp</option>
+                <option value="1">Lớp 1</option>
+                <option value="2">Lớp 2</option>
+                <option value="3">Lớp 3</option>
+                <option value="4">Lớp 4</option>
+                <option value="5">Lớp 5</option>
+                <option value="6">Lớp 6</option>
+                <option value="7">Lớp 7</option>
+                <option value="8">Lớp 8</option>
+                <option value="9">Lớp 9</option>
+                <option value="10">Lớp 10</option>
+                <option value="11">Lớp 11</option>
+                <option value="12">Lớp 12</option>
+              </select>
+            </div>
+
+            <div class="input-group">
+              <label class="label" for="textbook">Bộ sách giáo khoa</label>
+              <select class="select" id="textbook" name="textbook">
+                <option value="">Chọn bộ sách</option>
+                <option value="ketnoi">Kết nối tri thức với cuộc sống</option>
+                <option value="chantroi">Chân trời sáng tạo</option>
+                <option value="canhdieu">Cánh Diều</option>
+              </select>
+            </div>
+
+            <div class="input-group">
+              <label class="label" for="subject">Môn học*</label>
+              <input
+                type="text"
+                class="input"
+                id="subject"
+                name="subject"
+                placeholder="Ví dụ: Toán, Văn, Anh..."
+                required
+              />
+            </div>
+
+            <div class="input-group">
+              <label class="label" for="topic">Chủ đề bài học*</label>
+              <input
+                type="text"
+                class="input"
+                id="topic"
+                name="topic"
+                placeholder="Ví dụ: Phương trình bậc 2, Truyện ngắn..."
+                required
+              />
+            </div>
+
+            <div class="input-group">
+              <label class="label" for="duration">Thời gian (phút)</label>
+              <input
+                type="number"
+                class="input"
+                id="duration"
+                name="duration"
+                placeholder="45"
+                min="15"
+                max="180"
+              />
+            </div>
+
+            <div class="input-group full-width">
+              <label class="label">Yêu cầu tạo nội dung*</label>
+              <div class="checkbox-group">
+                <label class="checkbox-item">
+                  <input
+                    type="checkbox"
+                    name="content_type[]"
+                    value="lesson_plan"
+                  />
+                  <span>Kế hoạch giảng dạy</span>
+                </label>
+                <label class="checkbox-item">
+                  <input type="checkbox" name="content_type[]" value="quiz" />
+                  <span>Bài kiểm tra/Quiz</span>
+                </label>
+              </div>
+              <div class="error-message" id="content-error">
+                Vui lòng chọn ít nhất một loại nội dung (Kế hoạch giảng dạy hoặc
+                Bài kiểm tra/Quiz)!
+              </div>
+            </div>
+
+            <div class="input-group">
+              <label class="label" for="teaching_style"
+                >Phong cách giảng dạy</label
+              >
+              <select class="select" id="teaching_style" name="teaching_style">
+                <option value="">Chọn phong cách</option>
+                <option value="interactive">Tương tác - Thảo luận nhóm</option>
+                <option value="visual">Trực quan - Sử dụng hình ảnh</option>
+                <option value="practical">Thực hành - Học qua làm</option>
+                <option value="traditional">Truyền thống - Giảng giải</option>
+                <option value="gamified">Gamification - Học qua chơi</option>
+              </select>
+            </div>
+
+            <div class="input-group">
+              <label class="label" for="difficulty">Mức độ khó</label>
+              <select class="select" id="difficulty" name="difficulty">
+                <option value="">Chọn mức độ</option>
+                <option value="easy">Dễ - Cơ bản</option>
+                <option value="medium">Trung bình - Vừa phải</option>
+                <option value="hard">Khó - Nâng cao</option>
+                <option value="mixed">Hỗn hợp - Đa dạng mức độ</option>
+              </select>
+            </div>
+
+            <div class="input-group full-width">
+            <label class="label" for="files">Đính kèm tài liệu</label>
+            <div class="file-upload" id="fileUpload">
+              <input
+                type="file"
+                id="files"
+                name="files[]"
+                multiple
+                accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.jpg,.png"
+              />
+              <label class="file-upload-label" for="files">
+                <svg class="icon" viewBox="0 0 24 24">
+                  <path
+                    d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"
+                  />
+                </svg>
+                <span>Kéo thả file vào đây hoặc click để chọn</span>
+              </label>
+              <div class="file-list" id="fileList"></div>
+            </div>
+          </div>
+
+            <div class="input-group full-width">
+              <label class="label" for="additional_requirements"
+                >Yêu cầu bổ sung</label
+              >
+              <textarea
+                class="textarea"
+                id="additional_requirements"
+                name="additional_requirements"
+                placeholder="Ví dụ: Tập trung vào học sinh yếu, thêm hoạt động nhóm, sử dụng công nghệ..."
+              ></textarea>
+            </div>
+          </div>
+
+          <button type="submit" class="submit-btn">
+            🚀 Tạo nội dung giảng dạy với AI
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/form.js') }}"></script>
+  </body>
+</html>

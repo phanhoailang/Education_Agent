@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat - Edu Mate</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css') }}" />
+</head>
+<body>
+    <div class="header">
+        <a href="#" class="back-btn" onclick="goBack()">
+            Quay lại
+        </a>
+        <h1>🤖 Edu Mate</h1>
+        <div class="status-indicator">
+            <div class="status-dot"></div>
+            <span>Đang kết nối...</span>
+        </div>
+    </div>
+
+    <div class="chat-container">
+        <div class="chat-messages" id="chatMessages">
+            <div class="message ai">
+                <div class="message-avatar">🤖</div>
+                <div class="message-content">
+                    <div>Xin chào! Tôi đang xử lý yêu cầu tạo nội dung giảng dạy của bạn...</div>
+                    <div class="typing-indicator">
+                        <span>Đang suy nghĩ</span>
+                        <div class="typing-dots">
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                            <div class="dot"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-input">
+            <div class="input-actions">
+                <button class="action-btn" id="voiceBtn" title="Ghi âm">
+                    <svg class="send-icon" viewBox="0 0 24 24">
+                        <path d="M12 2C13.1 2 14 2.9 14 4V12C14 13.1 13.1 14 12 14C10.9 14 10 13.1 10 12V4C10 2.9 10.9 2 12 2M19 11C19 14.53 16.39 17.44 13 17.93V21H11V17.93C7.61 17.44 5 14.53 5 11H7C7 13.76 9.24 16 12 16S17 13.76 17 11H19Z"/>
+                    </svg>
+                </button>
+            </div>
+            <input type="text" class="input-field" placeholder="Tin nhắn sẽ được kích hoạt sau khi xử lý xong..." disabled>
+            <button class="send-btn" disabled>
+                <svg class="send-icon" viewBox="0 0 24 24">
+                    <path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Truyền dữ liệu JSON từ Flask sang JavaScript -->
+    <script type="application/json" id="eduForm">
+        {{ form_data | tojson | safe }}
+    </script>
+    <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+</body>
+</html>
