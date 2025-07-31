@@ -1,0 +1,168 @@
+{
+  "nodes": [
+    {
+      "id": "__start__",
+      "type": "runnable",
+      "data": {
+        "id": [
+          "langgraph",
+          "utils",
+          "runnable",
+          "RunnableCallable"
+        ],
+        "name": "__start__"
+      }
+    },
+    {
+      "id": "generate_prompt",
+      "type": "runnable",
+      "data": {
+        "id": [
+          "langgraph",
+          "utils",
+          "runnable",
+          "RunnableCallable"
+        ],
+        "name": "generate_prompt"
+      }
+    },
+    {
+      "id": "generate_subtopics",
+      "type": "runnable",
+      "data": {
+        "id": [
+          "langgraph",
+          "utils",
+          "runnable",
+          "RunnableCallable"
+        ],
+        "name": "generate_subtopics"
+      }
+    },
+    {
+      "id": "process_file",
+      "type": "runnable",
+      "data": {
+        "id": [
+          "langgraph",
+          "utils",
+          "runnable",
+          "RunnableCallable"
+        ],
+        "name": "process_file"
+      }
+    },
+    {
+      "id": "agent_retrieval",
+      "type": "runnable",
+      "data": {
+        "id": [
+          "langgraph",
+          "utils",
+          "runnable",
+          "RunnableCallable"
+        ],
+        "name": "agent_retrieval"
+      }
+    },
+    {
+      "id": "embed_store_uploaded",
+      "type": "runnable",
+      "data": {
+        "id": [
+          "langgraph",
+          "utils",
+          "runnable",
+          "RunnableCallable"
+        ],
+        "name": "embed_store_uploaded"
+      }
+    },
+    {
+      "id": "embed_store_searched",
+      "type": "runnable",
+      "data": {
+        "id": [
+          "langgraph",
+          "utils",
+          "runnable",
+          "RunnableCallable"
+        ],
+        "name": "embed_store_searched"
+      }
+    },
+    {
+      "id": "filter_chunks",
+      "type": "runnable",
+      "data": {
+        "id": [
+          "langgraph",
+          "utils",
+          "runnable",
+          "RunnableCallable"
+        ],
+        "name": "filter_chunks"
+      }
+    },
+    {
+      "id": "generate_lesson_plan",
+      "type": "runnable",
+      "data": {
+        "id": [
+          "langgraph",
+          "utils",
+          "runnable",
+          "RunnableCallable"
+        ],
+        "name": "generate_lesson_plan"
+      }
+    },
+    {
+      "id": "__end__"
+    }
+  ],
+  "edges": [
+    {
+      "source": "__start__",
+      "target": "generate_prompt"
+    },
+    {
+      "source": "agent_retrieval",
+      "target": "embed_store_searched"
+    },
+    {
+      "source": "embed_store_searched",
+      "target": "filter_chunks"
+    },
+    {
+      "source": "embed_store_uploaded",
+      "target": "filter_chunks"
+    },
+    {
+      "source": "filter_chunks",
+      "target": "generate_lesson_plan"
+    },
+    {
+      "source": "generate_prompt",
+      "target": "generate_subtopics"
+    },
+    {
+      "source": "generate_subtopics",
+      "target": "process_file"
+    },
+    {
+      "source": "process_file",
+      "target": "agent_retrieval",
+      "conditional": true
+    },
+    {
+      "source": "process_file",
+      "target": "embed_store_uploaded",
+      "conditional": true
+    },
+    {
+      "source": "generate_lesson_plan",
+      "target": "__end__"
+    }
+  ]
+}
