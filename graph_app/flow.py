@@ -381,7 +381,8 @@ builder.add_edge("generate_lesson_plan", END)              # ✅ THÊM
 graph = builder.compile()
 
 def run_flow(form_data: dict):
-    graph.invoke({"form_data": form_data})
+    result = graph.invoke({"form_data": form_data})
+    return result
 
 
 try:

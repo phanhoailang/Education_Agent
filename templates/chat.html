@@ -54,9 +54,13 @@
     </div>
 
     <!-- Truyền dữ liệu JSON từ Flask sang JavaScript -->
-    <script type="application/json" id="eduForm">
-        {{ form_data | tojson | safe }}
-    </script>
-    <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+<script type="application/json" id="eduForm">{{ form_data | tojson | safe }}</script>
+<script type="application/json" id="markdownContent">{{ lesson_markdown | tojson | safe }}</script>
+<script type="application/json" id="mdDownload">{{ md_download_url | tojson | safe }}</script>
+
+<script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+
 </body>
 </html>
