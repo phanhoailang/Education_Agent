@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Edu Mate - Trợ lý AI Giảng dạy</title>
+
+  <!-- Font Awesome (icons) -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+    integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+    crossorigin="anonymous" referrerpolicy="no-referrer"
+  />
+
+  <!-- CSS chính của form -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/form.css') }}?v=20250804">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-content">
+        <div class="logo">
+          <div class="ai-icon"><i class="fas fa-robot"></i></div>
+          <h1 class="title">Education Agent</h1>
+        </div>
+        <p class="subtitle">Trợ lý AI thông minh để tạo kế hoạch giảng dạy và bài kiểm tra tùy chỉnh</p>
+      </div>
+    </header>
+
+    <!-- Form -->
+    <main class="form-container">
+      <!-- Lưu ý: phải có enctype để upload file -->
+      <form id="eduForm" method="POST" action="/process" enctype="multipart/form-data" novalidate>
+        <div class="form-grid">
+          <!-- Khối lớp -->
+          <div class="input-group">
+            <label class="label" for="grade">
+              <i class="fas fa-graduation-cap"></i> Khối lớp*
+            </label>
+            <select class="select" id="grade" name="grade" required>
+              <option value="">Chọn khối lớp</option>
+              <option value="1">Lớp 1</option><option value="2">Lớp 2</option>
+              <option value="3">Lớp 3</option><option value="4">Lớp 4</option>
+              <option value="5">Lớp 5</option><option value="6">Lớp 6</option>
+              <option value="7">Lớp 7</option><option value="8">Lớp 8</option>
+              <option value="9">Lớp 9</option><option value="10">Lớp 10</option>
+              <option value="11">Lớp 11</option><option value="12">Lớp 12</option>
+            </select>
+          </div>
+
+          <!-- Bộ sách -->
+          <div class="input-group">
+            <label class="label" for="textbook">
+              <i class="fas fa-book"></i> Bộ sách giáo khoa
+            </label>
+            <select class="select" id="textbook" name="textbook">
+              <option value="">Chọn bộ sách</option>
+              <option value="ketnoi">Kết nối tri thức với cuộc sống</option>
+              <option value="chantroi">Chân trời sáng tạo</option>
+              <option value="canhdieu">Cánh Diều</option>
+            </select>
+          </div>
+
+          <!-- Môn học -->
+          <div class="input-group">
+            <label class="label" for="subject">
+              <i class="fas fa-chalkboard-teacher"></i> Môn học*
+            </label>
+            <input type="text" class="input" id="subject" name="subject"
+                   placeholder="Ví dụ: Toán, Văn, Anh..." required autocomplete="off">
+          </div>
+
+          <!-- Chủ đề -->
+          <div class="input-group">
+            <label class="label" for="topic">
+              <i class="fas fa-lightbulb"></i> Chủ đề bài học*
+            </label>
+            <input type="text" class="input" id="topic" name="topic"
+                   placeholder="Ví dụ: Phương trình bậc 2, Truyện ngắn..." required autocomplete="off">
+          </div>
+
+          <!-- Thời lượng -->
+          <div class="input-group">
+            <label class="label" for="duration">
+              <i class="fas fa-clock"></i> Thời gian (phút)
+            </label>
+            <input type="number" class="input" id="duration" name="duration"
+                   placeholder="45" min="15" max="180" inputmode="numeric">
+          </div>
+
+          <!-- Phong cách -->
+          <div class="input-group">
+            <label class="label" for="teaching_style">
+              <i class="fas fa-users"></i> Phong cách giảng dạy
+            </label>
+            <select class="select" id="teaching_style" name="teaching_style">
+              <option value="">Chọn phong cách</option>
+              <option value="interactive">Tương tác - Thảo luận nhóm</option>
+              <option value="visual">Trực quan - Sử dụng hình ảnh</option>
+              <option value="practical">Thực hành - Học qua làm</option>
+              <option value="traditional">Truyền thống - Giảng giải</option>
+              <option value="gamified">Gamification - Học qua chơi</option>
+            </select>
+          </div>
+
+          <!-- Mức độ khó -->
+          <div class="input-group">
+            <label class="label" for="difficulty">
+              <i class="fas fa-chart-line"></i> Mức độ khó
+            </label>
+            <select class="select" id="difficulty" name="difficulty">
+              <option value="">Chọn mức độ</option>
+              <option value="easy">Dễ - Cơ bản</option>
+              <option value="medium">Trung bình - Vừa phải</option>
+              <option value="hard">Khó - Nâng cao</option>
+              <option value="mixed">Hỗn hợp - Đa dạng mức độ</option>
+            </select>
+          </div>
+
+          <!-- Yêu cầu tạo nội dung -->
+          <div class="input-group full-width">
+            <label class="label">
+              <i class="fas fa-tasks"></i> Yêu cầu tạo nội dung*
+            </label>
+            <div class="checkbox-container">
+              <label class="checkbox-item">
+                <input type="checkbox" name="content_type[]" value="lesson_plan">
+                <span class="checkmark"></span>
+                <div class="checkbox-content">
+                  <i class="fas fa-file-alt"></i><span>Kế hoạch giảng dạy</span>
+                </div>
+              </label>
+              <label class="checkbox-item">
+                <input type="checkbox" name="content_type[]" value="quiz">
+                <span class="checkmark"></span>
+                <div class="checkbox-content">
+                  <i class="fas fa-question-circle"></i><span>Bài kiểm tra/Quiz</span>
+                </div>
+              </label>
+            </div>
+            <div class="error-message" id="content-error" aria-live="polite">
+              <i class="fas fa-exclamation-circle"></i>
+              Vui lòng chọn ít nhất một loại nội dung!
+            </div>
+          </div>
+
+          <!-- Upload tài liệu -->
+          <div class="input-group full-width">
+            <label class="label" for="files">
+              <i class="fas fa-paperclip"></i> Đính kèm tài liệu
+            </label>
+            <div class="file-upload" id="fileUpload">
+              <input
+                type="file" id="files" name="files[]"
+                multiple
+                accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.jpg,.png"
+              />
+              <label class="file-upload-label" for="files">
+                <div class="upload-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                <div class="upload-text">
+                  <span class="upload-title">Kéo thả file vào đây</span>
+                  <span class="upload-subtitle">hoặc click để chọn file</span>
+                </div>
+              </label>
+              <div class="file-list" id="fileList"></div>
+            </div>
+          </div>
+
+          <!-- Yêu cầu bổ sung -->
+          <div class="input-group full-width">
+            <label class="label" for="additional_requirements">
+              <i class="fas fa-edit"></i> Yêu cầu bổ sung
+            </label>
+            <textarea class="textarea" id="additional_requirements" name="additional_requirements"
+              placeholder="Ví dụ: Tập trung vào học sinh yếu, thêm hoạt động nhóm, sử dụng công nghệ..."></textarea>
+          </div>
+        </div>
+
+        <!-- Nút submit -->
+        <button type="submit" class="submit-btn">
+          <i class="fas fa-rocket"></i><span>Tạo nội dung giảng dạy với AI</span>
+        </button>
+      </form>
+    </main>
+  </div>
+
+  <!-- JS của form -->
+  <script defer src="{{ url_for('static', filename='js/form.js') }}?v=20250804"></script>
+</body>
+</html>

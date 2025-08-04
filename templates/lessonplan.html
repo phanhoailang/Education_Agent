@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Lesson Plan - Edu Mate</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/lessonplan.css') }}?v=20250805">
+</head>
+<body>
+  <div class="header">
+    <div class="header-left">
+      <a class="btn ghost" href="/chat">← Về Chat</a>
+      <h2>🤖 Edu Mate — Lesson Plan</h2>
+    </div>
+    <div class="status-indicator">
+      <div class="status-dot"></div><span>Sẵn sàng</span>
+    </div>
+  </div>
+
+  <div class="main">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h3>📚 Kế hoạch</h3>
+        <button class="btn primary" onclick="openCreate()">Tạo mới</button>
+      </div>
+      <div id="list" class="list"><div class="item-empty">Chưa có kế hoạch nào</div></div>
+    </aside>
+
+    <section class="content">
+      <div class="toolbar">
+        <div id="title" class="toolbar-title">Chọn một bài giảng để xem</div>
+        <div class="toolbar-actions">
+          <a class="btn" href="/chat">Chat AI</a>
+          <button class="btn" id="editBtn" onclick="toggleEdit()" disabled>Chỉnh sửa</button>
+          <button class="btn primary" id="saveBtn" onclick="save()" style="display:none;">💾 Lưu</button>
+          <a class="btn" id="downloadBtn" href="#" target="_blank" rel="noopener" style="display:none;">⬇️ Tải Markdown</a>
+          <button class="btn danger" id="removeBtn" onclick="removePlan()" disabled>🗑 Xoá</button>
+        </div>
+      </div>
+
+      <div id="container" class="container-pad">
+        <article id="viewer" class="viewer doc">
+          <div class="empty">Chưa có bài giảng nào được chọn</div>
+        </article>
+        <textarea id="editor" class="editor" placeholder="Nhập Markdown kế hoạch bài giảng..."></textarea>
+      </div>
+    </section>
+  </div>
+
+  <!-- Modal tạo mới -->
+  <div id="modal" class="modal" aria-hidden="true">
+    <div class="modal__inner">
+      <h3>🆕 Tạo bài giảng mới</h3>
+      <form id="createForm">
+        <div class="field"><label>Tiêu đề</label><input id="f_title" required placeholder="VD: Bài 1: Số hữu tỉ"></div>
+        <div class="field"><label>Môn học</label><input id="f_subject" required placeholder="VD: Toán học"></div>
+        <div class="field"><label>Lớp</label><input id="f_grade" required placeholder="VD: 10"></div>
+        <div class="field"><label>Thời gian (phút)</label><input id="f_duration" type="number" value="45" min="1" max="180"></div>
+        <div class="modal-actions">
+          <button type="button" class="btn ghost" onclick="closeCreate()">Huỷ</button>
+          <button class="btn primary" type="submit">Tạo</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+
+  <script type="application/json" id="plansData">{{ plans | default([], true) | tojson | safe }}</script>
+
+  <script src="{{ url_for('static', filename='js/lessonplan.js') }}?v=20250805"></script>
+</body>
+</html>

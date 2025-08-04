@@ -1,313 +1,364 @@
 "use strict";
 
 /**
- * chat.js — phiên bản hoàn chỉnh
- * - Đọc formData, markdownContent, mdDownload từ <script type="application/json">.
- * - Render Markdown bằng marked.js + DOMPurify (nếu có), fallback khi thiếu.
- * - Hiển thị card nội dung kế hoạch + link tải file .md.
- * - Cấu trúc code tách rõ: utils, renderers, UI, events.
+ * Chat JS – Canvas Plan ở cột phải (Chat:Plan = 40:60 do CSS)
+ * - Nhấp card → chia ngang và hiển thị Plan ở bên phải
+ * - Cả 2 cột luôn cao bằng nhau theo viewport (kể cả KHI CHƯA mở Plan)
+ * - Plan cuộn độc lập trong panel
+ * - Chỉnh sửa ngay trong panel (không chuyển trang)
  */
 
-/* ==========================
- *  UTILS
- * ========================== */
 const $ = (sel) => document.querySelector(sel);
 const byId = (id) => document.getElementById(id);
 
-function escapeHTML(str) {
-  if (str === null || str === undefined) return "";
-  return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
-function readJSONFromScript(scriptId, fallback = null) {
-  const el = byId(scriptId);
-  if (!el) return fallback;
-  const raw = (el.textContent || "").trim();
-  if (!raw) return fallback;
-  try {
+/* ===== Utils ===== */
+function readJSONFromScript(id, fallback = null) {
+  try{
+    const el = byId(id); if(!el) return fallback;
+    const raw = (el.textContent || "").trim(); if(!raw) return fallback;
     return JSON.parse(raw);
-  } catch (err) {
-    console.error(`[JSON] Parse error @#${scriptId}:`, err);
-    console.log(`[JSON] Raw content @#${scriptId}:`, raw);
-    return fallback;
+  }catch{ return fallback; }
+}
+function escapeHTML(str){
+  if(str===null || str===undefined) return "";
+  return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+function renderMarkdownHTML(md){
+  if(!md) return "";
+  try{
+    if(window.marked && window.DOMPurify){
+      marked.setOptions({ gfm:true, breaks:true, headerIds:true, mangle:false });
+      const raw = marked.parse(md);
+      return DOMPurify.sanitize(raw);
+    }
+  }catch{}
+  return "<pre style='white-space:pre-wrap'>" + escapeHTML(md) + "</pre>";
+}
+
+/* ===== State + Storage ===== */
+let currentPlanData = null;
+let PANEL_EDITING = false;
+
+function savePlanToStorage(plan){
+  const planToSave = {
+    id: plan.id || Date.now().toString(),
+    title: plan.title || "Kế hoạch bài giảng",
+    subject: plan.subject || "Chưa xác định",
+    grade: plan.grade || "Chưa xác định",
+    duration: plan.duration || "45 phút",
+    date: plan.date || new Date().toLocaleDateString("vi-VN"),
+    status: "completed",
+    markdown: plan.markdown || "",
+    downloadUrl: plan.downloadUrl || "",
+    fileName: plan.fileName || "",
+    formData: plan.formData || {}
+  };
+  sessionStorage.setItem("currentPlan", JSON.stringify(planToSave));
+  const list = JSON.parse(localStorage.getItem("planList") || "[]");
+  const i = list.findIndex(p => p.id === planToSave.id);
+  if(i>=0) list[i] = planToSave; else list.unshift(planToSave);
+  localStorage.setItem("planList", JSON.stringify(list));
+  currentPlanData = planToSave;
+  return planToSave;
+}
+function extractPlanInfoFromForm(form){
+  const topic = form?.topic || form?.title || form?.lesson || "";
+  const subj  = form?.subject || "Chưa xác định";
+  const grade = form?.grade ? `Lớp ${form.grade}` : "Chưa xác định";
+  const dur   = form?.duration ? `${form.duration} phút` : "45 phút";
+  const title = topic ? `Kế hoạch bài giảng: ${topic}` : `Kế hoạch bài giảng: ${subj}`;
+  return { title, subject:subj, grade, duration:dur };
+}
+
+/* ===== Chat helpers ===== */
+function addAIMessage(html){
+  const wrap = byId("chatMessages");
+  const div = document.createElement("div");
+  div.className = "message ai";
+  div.innerHTML = `<div class="message-avatar">🤖</div><div class="message-content">${html}</div>`;
+  wrap.appendChild(div);
+  wrap.scrollTop = wrap.scrollHeight;
+  // Giữ chiều cao đầy màn hình kể cả khi thêm tin nhắn
+  requestAnimationFrame(sizeColumns);
+}
+function addUserMessage(html){
+  const wrap = byId("chatMessages");
+  const div = document.createElement("div");
+  div.className = "message user";
+  div.innerHTML = `<div class="message-avatar">👤</div><div class="message-content">${html}</div>`;
+  wrap.appendChild(div);
+  wrap.scrollTop = wrap.scrollHeight;
+  requestAnimationFrame(sizeColumns);
+}
+
+/* ===== Equal height logic (QUAN TRỌNG) ===== */
+function ensurePanelInsideGrid(){
+  const page = byId("page");
+  const panelCol = byId("panelCol");
+  if(page && panelCol && panelCol.parentElement !== page){
+    page.appendChild(panelCol);
+  }
+}
+function forceTwoColumns(){
+  const page = byId("page");
+  if(!page) return;
+  document.body.classList.add("panel-open");
+  page.classList.add("is-open");
+  const cols = getComputedStyle(page).gridTemplateColumns;
+  const looksOneCol = !cols || cols.split(" ").length < 2;
+  if(looksOneCol){
+    page.style.display = "grid";
+    page.style.gridTemplateColumns = "minmax(0, 2fr) minmax(0, 3fr)";
   }
 }
 
-function addAIMessage(contentHTML) {
-  const chatMessages = byId("chatMessages");
-  if (!chatMessages) return;
-  const messageDiv = document.createElement("div");
-  messageDiv.className = "message ai";
-  messageDiv.innerHTML = `
-    <div class="message-avatar">🤖</div>
-    <div class="message-content">${contentHTML}</div>
-  `;
-  chatMessages.appendChild(messageDiv);
-  chatMessages.scrollTop = chatMessages.scrollHeight;
+/* TÍNH CHIỀU CAO KHẢ DỤNG:
+   - Lấy mép dưới của header
+   - Trừ khỏi window.innerHeight
+   - Áp dụng cho: khối chat + panel (nếu đang mở)
+   => Giúp: khi CHƯA mở Plan, Chat vẫn cao đầy màn hình */
+function sizeColumns(){
+  const header = document.querySelector(".header");
+  const headerBottom = header ? header.getBoundingClientRect().bottom : 0;
+  const avail = Math.max(360, Math.floor(window.innerHeight - headerBottom - 16)); // 16px bottom gap
+
+  const chatBox = document.querySelector(".col-chat .chat-container");
+  if(chatBox){
+    chatBox.style.height = `${avail}px`;
+    chatBox.style.maxHeight = `${avail}px`;
+  }
+
+  const panel = byId("planPanel");
+  if(panel && panel.getAttribute("aria-hidden") !== "true"){
+    panel.style.height = `${avail}px`;
+    panel.style.maxHeight = `${avail}px`;
+  }
 }
 
-function addUserMessage(contentHTML) {
-  const chatMessages = byId("chatMessages");
-  if (!chatMessages) return;
-  const messageDiv = document.createElement("div");
-  messageDiv.className = "message user";
-  messageDiv.innerHTML = `
-    <div class="message-avatar">👤</div>
-    <div class="message-content">${contentHTML}</div>
+/* ===== Right Panel (Canvas) ===== */
+function renderPanelViewer(){
+  const body = byId("planPanelBody");
+  if(!body || !currentPlanData) return;
+  body.innerHTML = `
+    <article id="panelViewer" class="doc">${renderMarkdownHTML(currentPlanData.markdown)}</article>
+    <textarea id="panelEditor" class="panel-editor" style="display:none;width:100%;min-height:60vh;border:1px solid #e5e7eb;border-radius:12px;padding:12px;background:#fff;"></textarea>
   `;
-  chatMessages.appendChild(messageDiv);
-  chatMessages.scrollTop = chatMessages.scrollHeight;
+  PANEL_EDITING = false;
+  byId("panelSaveBtn")?.style && (byId("panelSaveBtn").style.display = "none");
+  byId("panelCancelBtn")?.style && (byId("panelCancelBtn").style.display = "none");
+  byId("panelEditBtn")?.style && (byId("panelEditBtn").style.display = "inline-flex");
 }
+function renderPlanPanelFromCurrent(){
+  if(!currentPlanData) return;
 
-/* ==========================
- *  MARKDOWN RENDERERS
- * ========================== */
+  ensurePanelInsideGrid();
+  forceTwoColumns();
+  byId("planPanel")?.setAttribute("aria-hidden","false");
 
-/** Fallback khi không có marked + DOMPurify: render đơn giản nhưng an toàn */
-function simpleMarkdownFallback(md) {
-  if (!md) return "";
-  let out = escapeHTML(md);
+  const titleEl = byId("planPanelTitle");
+  if(titleEl) titleEl.textContent = currentPlanData.title || "Kế hoạch bài giảng";
 
-  // Code block ```...```
-  out = out.replace(/```([\s\S]*?)```/g, (_m, code) => {
-    return `<pre style="white-space:pre-wrap;overflow:auto;"><code>${code}</code></pre>`;
+  const dlEl = byId("panelDownloadLink");
+  if(dlEl){
+    if(currentPlanData.downloadUrl){
+      dlEl.href = currentPlanData.downloadUrl;
+      dlEl.style.display = "inline-flex";
+    }else{
+      dlEl.removeAttribute("href");
+      dlEl.style.display = "none";
+    }
+  }
+
+  renderPanelViewer();
+  // đặt chiều cao sau khi render DOM
+  requestAnimationFrame(sizeColumns);
+}
+window.openPlanPanelFromCurrent = renderPlanPanelFromCurrent;
+
+function openPlanPanel(markdownString, downloadUrl){
+  if(typeof markdownString === "string" && markdownString.trim().length){
+    const formData = readJSONFromScript("eduForm", {});
+    const info = extractPlanInfoFromForm(formData);
+    savePlanToStorage({ ...info, markdown: markdownString, downloadUrl: downloadUrl || "", formData });
+  }
+  renderPlanPanelFromCurrent();
+}
+window.openPlanPanel = openPlanPanel;
+
+function closePlanPanel(){
+  const page = byId("page");
+  document.body.classList.remove("panel-open");
+  page?.classList.remove("is-open");
+  if(page){ page.style.gridTemplateColumns = ""; page.style.display = ""; }
+
+  // KHÔNG xoá height của chat — để khi đóng panel, Chat vẫn cao đầy màn hình
+  const panel = byId("planPanel");
+  if(panel){ panel.style.height=""; panel.style.maxHeight=""; }
+  byId("planPanel")?.setAttribute("aria-hidden","true");
+
+  requestAnimationFrame(sizeColumns);
+}
+window.closePlanPanel = closePlanPanel;
+
+/* ---- Inline Editing in Panel ---- */
+function togglePanelEdit(forceState){
+  const viewer = byId("panelViewer");
+  const editor = byId("panelEditor");
+  if(!viewer || !editor || !currentPlanData) return;
+
+  if(typeof forceState === "boolean"){ PANEL_EDITING = forceState; }
+  else{ PANEL_EDITING = !PANEL_EDITING; }
+
+  if(PANEL_EDITING){
+    editor.value = currentPlanData.markdown || "";
+    viewer.style.display = "none";
+    editor.style.display = "block";
+    byId("panelSaveBtn").style.display = "inline-flex";
+    byId("panelCancelBtn").style.display = "inline-flex";
+    byId("panelEditBtn").style.display = "none";
+  }else{
+    viewer.style.display = "block";
+    editor.style.display = "none";
+    byId("panelSaveBtn").style.display = "none";
+    byId("panelCancelBtn").style.display = "none";
+    byId("panelEditBtn").style.display = "inline-flex";
+  }
+  requestAnimationFrame(sizeColumns);
+}
+window.togglePanelEdit = togglePanelEdit;
+
+function savePanelEdit(){
+  const editor = byId("panelEditor");
+  if(!currentPlanData || !editor) return;
+  currentPlanData.markdown = editor.value || "";
+
+  sessionStorage.setItem("currentPlan", JSON.stringify(currentPlanData));
+  const list = JSON.parse(localStorage.getItem("planList") || "[]");
+  const i = list.findIndex(p => p.id === currentPlanData.id);
+  if(i>=0) list[i] = currentPlanData; else list.unshift(currentPlanData);
+  localStorage.setItem("planList", JSON.stringify(list));
+
+  const viewer = byId("panelViewer");
+  if(viewer) viewer.innerHTML = renderMarkdownHTML(currentPlanData.markdown);
+  togglePanelEdit(false);
+  toast("Đã lưu bản chỉnh sửa");
+}
+window.savePanelEdit = savePanelEdit;
+
+/* ---- Misc ---- */
+function switchTab(tab){
+  document.querySelectorAll(".nav-tab").forEach(b=>{
+    const isActive = b.textContent.trim().toLowerCase().includes(tab);
+    b.classList.toggle("active", isActive);
   });
-
-  // Headings (h3 -> h1 để tránh đè nhau)
-  out = out.replace(/^###\s+(.+)$/gm, `<h3 style="margin:14px 0 8px 0;">$1</h3>`);
-  out = out.replace(/^##\s+(.+)$/gm, `<h2 style="margin:16px 0 10px 0;">$1</h2>`);
-  out = out.replace(/^#\s+(.+)$/gm, `<h1 style="margin:18px 0 12px 0;">$1</h1>`);
-
-  // Bold / Italic / Link
-  out = out.replace(/\*\*(.+?)\*\*/g, `<strong>$1</strong>`);
-  out = out.replace(/(^|[^\*])\*(?!\s)(.+?)(?!\s)\*(?!\*)/g, `$1<em>$2</em>`);
-  out = out.replace(/\[([^\]]+?)\]\((https?:\/\/[^\s)]+)\)/g, `<a href="$2" target="_blank" rel="noopener">$1</a>`);
-
-  // Bullet list (đơn giản theo dòng)
-  const lines = out.split(/\n/);
-  let html = [];
-  let inList = false;
-
-  for (let i = 0; i < lines.length; i++) {
-    const ln = lines[i];
-    const bulletMatch = ln.match(/^(?:[\-\*]\s+)(.+)$/);
-
-    if (bulletMatch) {
-      if (!inList) {
-        html.push(`<ul style="margin:6px 0 10px 18px;padding:0;">`);
-        inList = true;
-      }
-      html.push(`<li>${bulletMatch[1]}</li>`);
-    } else {
-      if (inList && ln.trim() !== "") {
-        html.push(`</ul>`);
-        inList = false;
-      }
-      html.push(ln);
-    }
+  if(tab==="chat"){
+    document.querySelector(".col-chat")?.scrollIntoView({ behavior:"smooth", block:"start" });
   }
-  if (inList) html.push(`</ul>`);
-
-  out = html.join("\n").replace(/\n/g, "<br>");
-  return out;
 }
+window.switchTab = switchTab;
 
-/** Render Markdown bằng marked + DOMPurify nếu có, fallback nếu thiếu */
-function renderMarkdownHTML(md) {
-  if (!md) return "";
-  try {
-    if (window.marked && window.DOMPurify) {
-      marked.setOptions({ gfm: true, breaks: true, headerIds: true, mangle: false });
-      const rawHtml = marked.parse(md);
-      const safeHtml = DOMPurify.sanitize(rawHtml, {
-        ALLOWED_TAGS: [
-          "h1","h2","h3","h4","h5","h6","p","ul","ol","li","strong","em",
-          "a","code","pre","blockquote","hr","br","table","thead","tbody",
-          "tr","th","td","span","div"
-        ],
-        ALLOWED_ATTR: ["href","name","target","rel","colspan","rowspan","align"]
-      });
-      return safeHtml;
-    }
-  } catch (e) {
-    console.error("[MD] Lỗi render marked/DOMPurify:", e);
-  }
-  // Fallback đơn giản
-  return simpleMarkdownFallback(md);
+function toast(msg, error=false){
+  const t = document.createElement("div");
+  t.style.cssText = `position:fixed;top:20px;right:20px;background:${error?"#ef4444":"#16a34a"};color:#fff;padding:10px 14px;border-radius:10px;z-index:1000;transform:translateY(-8px);opacity:0;transition:all .2s`;
+  t.textContent = msg; document.body.appendChild(t);
+  requestAnimationFrame(()=>{ t.style.opacity="1"; t.style.transform="translateY(0)"; });
+  setTimeout(()=>{ t.style.opacity="0"; t.style.transform="translateY(-8px)"; setTimeout(()=>t.remove(),180); },1800);
 }
+window.copyPlanContent = function(){
+  if(!currentPlanData?.markdown) return;
+  navigator.clipboard.writeText(currentPlanData.markdown)
+    .then(()=>toast("Đã sao chép nội dung!"))
+    .catch(()=>toast("Không thể sao chép", true));
+};
+window.openLessonPlanPage = function(){
+  const plan = currentPlanData;
+  const url = plan?.id ? `/lesson-plan?planId=${encodeURIComponent(plan.id)}` : "/lesson-plan";
+  window.open(url, "_blank");
+};
+function goBack(){ window.history.back(); }
+window.goBack = goBack;
 
-/* ==========================
- *  UI HELPERS
- * ========================== */
-function showLessonCard(markdown, downloadUrl = "", fileName = "") {
-  if (!markdown || !markdown.trim()) {
-    addAIMessage(`<strong>⚠️ Đã xử lý xong nhưng chưa nhận được nội dung Markdown.</strong><br>Vui lòng thử lại hoặc kiểm tra log.`);
-    return;
-  }
-  const html = renderMarkdownHTML(markdown);
-  const meta = fileName
-    ? `<div style="font-size:12px;color:#64748b;margin:6px 0 2px;">Nguồn file: ${escapeHTML(fileName)}</div>`
-    : "";
-  const link = downloadUrl
-    ? `<div style="margin-top:8px;">⬇️ <a href="${escapeHTML(downloadUrl)}" target="_blank" rel="noopener">Tải file Markdown</a></div>`
-    : "";
+/* ===== Card trong chat ===== */
+function showLessonCard(markdown, downloadUrl = "", fileName = "", formData = {}){
+  const info = extractPlanInfoFromForm(formData);
+  const plan = savePlanToStorage({ ...info, markdown, downloadUrl, fileName, formData });
+  const preview = (markdown || "").substring(0, 170).replace(/[#*_>\-\|]/g, "").trim() + "...";
 
   const card = `
-    <strong>📘 Kế hoạch bài giảng:</strong>
-    ${meta}
-    <div style="background:#f8f9fa;padding:18px;border-radius:12px;margin-top:10px;border-left:4px solid #007bff;max-height:420px;overflow:auto;">
-      ${html}
+    <div class="plan-card" onclick="openPlanPanelFromCurrent()">
+      <div class="plan-card__icon">📘</div>
+      <div>
+        <div class="plan-card__title">Kế hoạch bài giảng đã tạo thành công!</div>
+        <ul class="plan-card__meta">
+          <li><strong>Môn học:</strong>&nbsp;${escapeHTML(plan.subject)}</li>
+          <li><strong>Lớp:</strong>&nbsp;${escapeHTML(plan.grade)}</li>
+          <li><strong>Thời gian:</strong>&nbsp;${escapeHTML(plan.duration)}</li>
+          <li><strong>Ngày tạo:</strong>&nbsp;${escapeHTML(plan.date)}</li>
+        </ul>
+        <div style="font-size:12px;color:#6b7280;margin:6px 0 10px 0;border-top:1px solid #e9ecef;padding-top:8px;">
+          <strong>Nội dung xem trước:</strong><br>${escapeHTML(preview)}
+        </div>
+        <div class="plan-card__footer">
+          ${downloadUrl ? `<a href="${escapeHTML(downloadUrl)}" target="_blank" rel="noopener" class="chip-btn" onclick="event.stopPropagation()">⬇️ Tải Markdown</a>` : ""}
+          <button class="chip-btn view" onclick="event.stopPropagation(); openPlanPanelFromCurrent()">👁 Xem</button>
+          <button class="chip-btn edit" onclick="event.stopPropagation(); togglePanelEdit(true); openPlanPanelFromCurrent()">✏️ Sửa nhanh</button>
+        </div>
+      </div>
     </div>
-    ${link}
   `;
   addAIMessage(card);
 }
 
-function showFormSummary(formData) {
-  if (!formData || !Object.keys(formData).length) {
-    addAIMessage("⚠️ Không nhận được dữ liệu từ form. Vui lòng thử lại.");
-    return;
-  }
-  const message = `
-    <strong>✅ Đã nhận dữ liệu từ form!</strong><br>
-    <ul>
-      <li><strong>Khối lớp:</strong> ${escapeHTML(formData.grade || "Không xác định")}</li>
-      <li><strong>Bộ sách giáo khoa:</strong> ${escapeHTML(formData.textbook || "Không xác định")}</li>
-      <li><strong>Môn học:</strong> ${escapeHTML(formData.subject || "Không xác định")}</li>
-      <li><strong>Chủ đề:</strong> ${escapeHTML(formData.topic || "Không xác định")}</li>
-      <li><strong>Thời gian:</strong> ${formData.duration ? escapeHTML(formData.duration) + " phút" : "Không xác định"}</li>
-      <li><strong>Loại nội dung:</strong> ${
-        Array.isArray(formData.content_types) && formData.content_types.length
-          ? escapeHTML(formData.content_types.join(", "))
-          : "Không xác định"
-      }</li>
-      <li><strong>Phong cách giảng dạy:</strong> ${escapeHTML(formData.teaching_style || "Không xác định")}</li>
-      <li><strong>Mức độ khó:</strong> ${escapeHTML(formData.difficulty || "Không xác định")}</li>
-      <li><strong>Yêu cầu bổ sung:</strong> ${escapeHTML(formData.additional_requirements || "Không có")}</li>
-      <li><strong>File đính kèm:</strong> ${
-        Array.isArray(formData.files) && formData.files.length
-          ? escapeHTML(formData.files.join(", "))
-          : "Không có"
-      }</li>
-    </ul>
-  `;
-  addAIMessage(message);
-}
+/* ===== Init ===== */
+function init(){
+  const status = document.querySelector(".status-indicator span");
+  const input  = byId("userInput");
+  const send   = byId("sendBtn");
 
-function injectEnhanceStyles() {
-  // Một số CSS nhỏ cho bảng/code để đọc dễ hơn (nếu chat.css chưa có)
-  const css = `
-    .message .message-content table { border-collapse: collapse; width: 100%; margin: 8px 0 12px; }
-    .message .message-content th, .message .message-content td { border: 1px solid #e5e7eb; padding: 6px 8px; text-align: left; }
-    .message .message-content pre { background: rgba(15,23,42,0.05); padding: 10px; border-radius: 8px; overflow: auto; }
-    .message .message-content code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace; }
-    @keyframes slideOut { from {opacity:1;transform:translateY(0);} to {opacity:0;transform:translateY(-20px);} }
-  `;
-  const style = document.createElement("style");
-  style.setAttribute("data-from", "chat-js-enhance");
-  style.textContent = css;
-  document.head.appendChild(style);
-}
-
-/* ==========================
- *  INIT
- * ========================== */
-function initUI() {
-  const statusIndicator = $(".status-indicator span");
-  const inputField = $(".input-field");
-  const sendBtn = $(".send-btn");
-
-  // Đọc dữ liệu từ server đã nhúng
-  const formData = readJSONFromScript("eduForm", {});
-  const markdownContent = readJSONFromScript("markdownContent", "");
+  const formData      = readJSONFromScript("eduForm", {});
+  const markdown      = readJSONFromScript("markdownContent", "");
   const mdDownloadUrl = readJSONFromScript("mdDownload", "");
-  // (tuỳ chọn) nếu bạn có thêm script id="mdMeta" để gửi basename:
-  const mdMeta = readJSONFromScript("mdMeta", {}); // { basename: "lesson_plan_..." }
-  const mdFileName = (mdMeta && mdMeta.basename) || ""; // sẽ trống nếu không truyền
 
-  console.log("[JS] formData:", formData);
-  console.log("[JS] markdown length:", (markdownContent && markdownContent.length) || 0);
-  if (mdDownloadUrl) console.log("[JS] download url:", mdDownloadUrl);
-
-  // Hiển thị markdown + link tải
-  if (markdownContent) {
-    showLessonCard(markdownContent, mdDownloadUrl || "", mdFileName);
+  if (markdown && markdown.trim()) {
+    showLessonCard(markdown, mdDownloadUrl || "", "", formData);
+    renderPlanPanelFromCurrent();
   } else {
-    addAIMessage(`<strong>⚠️ Chưa nhận được nội dung Markdown.</strong><br>Vui lòng thử lại hoặc kiểm tra log backend.`);
-  }
-
-  // Thông tin tóm tắt form
-  showFormSummary(formData);
-
-  // Cập nhật trạng thái UI
-  if (statusIndicator) statusIndicator.textContent = "Sẵn sàng chat";
-  if (inputField) {
-    inputField.disabled = false;
-    inputField.placeholder = "Nhập tin nhắn của bạn...";
-  }
-  if (sendBtn) sendBtn.disabled = false;
-}
-
-/* ==========================
- *  EVENTS
- * ========================== */
-function sendMessage() {
-  const inputField = $(".input-field");
-  if (!inputField) return;
-
-  const message = inputField.value.trim();
-  if (!message) return;
-
-  addUserMessage(escapeHTML(message));
-  inputField.value = "";
-
-  // Mô phỏng AI phản hồi
-  setTimeout(() => {
-    addAIMessage("Cảm ơn bạn! Tôi đang xử lý và sẽ trả lời bạn ngay…");
-  }, 700);
-}
-
-function attachEventHandlers() {
-  byId("voiceBtn")?.addEventListener("click", function () {
-    byId("chatBtn")?.classList.remove("active");
-    this.classList.add("active");
-  });
-
-  byId("chatBtn")?.addEventListener("click", function () {
-    byId("voiceBtn")?.classList.remove("active");
-    this.classList.add("active");
-  });
-
-  $(".input-field")?.addEventListener("keypress", function (e) {
-    if (e.key === "Enter" && !this.disabled) sendMessage();
-  });
-
-  $(".send-btn")?.addEventListener("click", sendMessage);
-}
-
-// Cho nút "Quay lại" trong template
-function goBack() {
-  window.history.back();
-}
-window.goBack = goBack;
-
-/* ==========================
- *  BOOT
- * ========================== */
-window.addEventListener("DOMContentLoaded", () => {
-  // Độ trễ nhỏ để tạo cảm giác "đang xử lý" (tuỳ chỉnh 300 → 3000ms nếu muốn)
-  setTimeout(() => {
     try {
-      injectEnhanceStyles();
-      initUI();
-      attachEventHandlers();
-    } catch (err) {
-      console.error("[INIT] Lỗi khởi tạo UI:", err);
-      addAIMessage("⚠️ Có lỗi khi khởi tạo giao diện. Vui lòng kiểm tra console.");
+      const ss = JSON.parse(sessionStorage.getItem("currentPlan") || "null");
+      if (ss && ss.markdown) {
+        currentPlanData = ss;
+        showLessonCard(ss.markdown, ss.downloadUrl || "", ss.fileName || "", ss.formData || {});
+        // chưa mở plan thì vẫn set chiều cao đầy màn hình
+        requestAnimationFrame(sizeColumns);
+      } else {
+        addAIMessage(`<strong>⚠️ Chưa nhận được nội dung Markdown.</strong>`);
+        requestAnimationFrame(sizeColumns);
+      }
+    } catch {
+      addAIMessage(`<strong>⚠️ Chưa nhận được nội dung Markdown.</strong>`);
+      requestAnimationFrame(sizeColumns);
     }
-  }, 300);
-});
+  }
+
+  if(status) status.textContent = "Sẵn sàng chat";
+  if(input){ input.disabled = false; input.placeholder = "Nhập tin nhắn của bạn..."; }
+  if(send) send.disabled = false;
+
+  // luôn giữ chiều cao hợp lý
+  sizeColumns();
+  window.addEventListener("resize", sizeColumns);
+
+  input?.addEventListener("keypress", (e)=>{
+    if(e.key === "Enter" && !input.disabled){
+      const v = input.value.trim(); if(!v) return;
+      addUserMessage(escapeHTML(v));
+      input.value = "";
+    }
+  });
+  send?.addEventListener("click", ()=>{
+    const v = input.value?.trim(); if(!v) return;
+    addUserMessage(escapeHTML(v));
+    input.value = "";
+  });
+}
+window.addEventListener("DOMContentLoaded", init);

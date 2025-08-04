@@ -1,66 +1,96 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat - Edu Mate</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css') }}" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chat - Edu Mate</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css') }}?v=20250805" />
 </head>
 <body>
-    <div class="header">
-        <a href="#" class="back-btn" onclick="goBack()">
-            Quay lại
-        </a>
-        <h1>🤖 Edu Mate</h1>
-        <div class="status-indicator">
-            <div class="status-dot"></div>
-            <span>Đang kết nối...</span>
-        </div>
+  <!-- Header -->
+  <div class="header">
+    <a href="#" class="back-btn" onclick="goBack()">Quay lại</a>
+    <h1>🤖 Edu Mate</h1>
+    <div class="status-indicator">
+      <div class="status-dot"></div><span>Sẵn sàng chat</span>
     </div>
+  </div>
 
-    <div class="chat-container">
+  <!-- Lưới 2 cột: Chat (trái) + Plan (phải) -->
+  <div class="page" id="page">
+    <!-- Cột Chat -->
+    <div class="col col-chat">
+      <div class="chat-container">
         <div class="chat-messages" id="chatMessages">
-            <div class="message ai">
-                <div class="message-avatar">🤖</div>
-                <div class="message-content">
-                    <div>Xin chào! Tôi đang xử lý yêu cầu tạo nội dung giảng dạy của bạn...</div>
-                    <div class="typing-indicator">
-                        <span>Đang suy nghĩ</span>
-                        <div class="typing-dots">
-                            <div class="dot"></div>
-                            <div class="dot"></div>
-                            <div class="dot"></div>
-                        </div>
-                    </div>
-                </div>
+          <div class="message ai">
+            <div class="message-avatar">🤖</div>
+            <div class="message-content">
+              <div>Xin chào! Tôi đang xử lý yêu cầu tạo nội dung giảng dạy của bạn...</div>
+              <div class="typing-indicator">
+                <span>Đang suy nghĩ</span>
+                <div class="typing-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+              </div>
             </div>
+          </div>
         </div>
 
+        <!-- Input -->
         <div class="chat-input">
-            <div class="input-actions">
-                <button class="action-btn" id="voiceBtn" title="Ghi âm">
-                    <svg class="send-icon" viewBox="0 0 24 24">
-                        <path d="M12 2C13.1 2 14 2.9 14 4V12C14 13.1 13.1 14 12 14C10.9 14 10 13.1 10 12V4C10 2.9 10.9 2 12 2M19 11C19 14.53 16.39 17.44 13 17.93V21H11V17.93C7.61 17.44 5 14.53 5 11H7C7 13.76 9.24 16 12 16S17 13.76 17 11H19Z"/>
-                    </svg>
-                </button>
-            </div>
-            <input type="text" class="input-field" placeholder="Tin nhắn sẽ được kích hoạt sau khi xử lý xong..." disabled>
-            <button class="send-btn" disabled>
-                <svg class="send-icon" viewBox="0 0 24 24">
-                    <path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"/>
-                </svg>
+          <div class="input-actions">
+            <button class="action-btn" id="voiceBtn" title="Ghi âm" type="button">
+              <svg class="send-icon" viewBox="0 0 24 24"><path d="M12 2C13.1 2 14 2.9 14 4V12C14 13.1 13.1 14 12 14C10.9 14 10 13.1 10 12V4C10 2.9 10.9 2 12 2M19 11C19 14.53 16.39 17.44 13 17.93V21H11V17.93C7.61 17.44 5 14.53 5 11H7C7 13.76 9.24 16 12 16S17 13.76 17 11H19Z"/></svg>
             </button>
+          </div>
+          <input type="text" class="input-field" id="userInput" placeholder="Nhập tin nhắn của bạn..." disabled>
+          <button class="send-btn" id="sendBtn" disabled type="button">
+            <svg class="send-icon" viewBox="0 0 24 24"><path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"/></svg>
+          </button>
         </div>
+      </div>
     </div>
 
-    <!-- Truyền dữ liệu JSON từ Flask sang JavaScript -->
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
-<script type="application/json" id="eduForm">{{ form_data | tojson | safe }}</script>
-<script type="application/json" id="markdownContent">{{ lesson_markdown | tojson | safe }}</script>
-<script type="application/json" id="mdDownload">{{ md_download_url | tojson | safe }}</script>
+    <!-- Cột Panel Plan -->
+    <div class="col col-panel" id="panelCol">
+      <section id="planPanel" class="plan-panel" aria-hidden="true">
+        <div class="plan-panel__header">
+          <div class="plan-panel__nav">
+            <button class="nav-tab active" onclick="switchTab('chat')">Chat</button>
+            <button class="nav-tab" onclick="switchTab('plan')">Plan</button>
+          </div>
+          <div class="plan-panel__title" id="planPanelTitle"></div>
+          <div class="plan-panel__actions">
+            <a id="panelDownloadLink" class="btn ghost" href="#" target="_blank" rel="noopener" style="display:none;">⬇️ Tải Markdown</a>
+            <button class="btn ghost" onclick="copyPlanContent()">📋 Sao chép</button>
 
-<script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+            <!-- Chỉnh sửa trực tiếp trong panel -->
+            <button class="btn primary" id="panelEditBtn" onclick="togglePanelEdit()">✏️ Chỉnh sửa</button>
+            <button class="btn primary" id="panelSaveBtn" onclick="savePanelEdit()" style="display:none;">💾 Lưu</button>
+            <button class="btn" id="panelCancelBtn" onclick="togglePanelEdit(false)" style="display:none;">↩︎ Huỷ</button>
 
+            <!-- Tuỳ chọn: mở trang LessonPlan riêng -->
+            <button class="btn" onclick="openLessonPlanPage()">🔗 Mở LessonPlan</button>
+
+            <button class="btn close-btn" onclick="closePlanPanel()">✕</button>
+          </div>
+        </div>
+
+        <div class="plan-panel__body" id="planPanelBody">
+          <!-- Viewer/Editor sẽ được render bởi JS -->
+          <div class="doc" style="color:#9ca3af;">Chưa có nội dung để hiển thị</div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Libs render Markdown -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+
+  <!-- Dữ liệu server inject -->
+  <script type="application/json" id="eduForm">{{ form_data | tojson | safe }}</script>
+  <script type="application/json" id="markdownContent">{{ lesson_markdown | tojson | safe }}</script>
+  <script type="application/json" id="mdDownload">{{ md_download_url | tojson | safe }}</script>
+
+  <script src="{{ url_for('static', filename='js/chat.js') }}?v=20250805"></script>
 </body>
 </html>
