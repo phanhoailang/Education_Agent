@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lesson Plan - Edu Mate</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/lessonplan.css') }}?v=20250805">
 </head>
+
 <body>
   <div class="header">
     <div class="header-left">
@@ -23,7 +25,9 @@
         <h3>📚 Kế hoạch</h3>
         <button class="btn primary" onclick="openCreate()">Tạo mới</button>
       </div>
-      <div id="list" class="list"><div class="item-empty">Chưa có kế hoạch nào</div></div>
+      <div id="list" class="list">
+        <div class="item-empty">Chưa có kế hoạch nào</div>
+      </div>
     </aside>
 
     <section class="content">
@@ -33,7 +37,8 @@
           <a class="btn" href="/chat">Chat AI</a>
           <button class="btn" id="editBtn" onclick="toggleEdit()" disabled>Chỉnh sửa</button>
           <button class="btn primary" id="saveBtn" onclick="save()" style="display:none;">💾 Lưu</button>
-          <a class="btn" id="downloadBtn" href="#" target="_blank" rel="noopener" style="display:none;">⬇️ Tải Markdown</a>
+          <a class="btn" id="downloadBtn" href="#" target="_blank" rel="noopener" style="display:none;">⬇️ Tải
+            Markdown</a>
           <button class="btn danger" id="removeBtn" onclick="removePlan()" disabled>🗑 Xoá</button>
         </div>
       </div>
@@ -55,7 +60,8 @@
         <div class="field"><label>Tiêu đề</label><input id="f_title" required placeholder="VD: Bài 1: Số hữu tỉ"></div>
         <div class="field"><label>Môn học</label><input id="f_subject" required placeholder="VD: Toán học"></div>
         <div class="field"><label>Lớp</label><input id="f_grade" required placeholder="VD: 10"></div>
-        <div class="field"><label>Thời gian (phút)</label><input id="f_duration" type="number" value="45" min="1" max="180"></div>
+        <div class="field"><label>Thời gian (phút)</label><input id="f_duration" type="number" value="45" min="1"
+            max="180"></div>
         <div class="modal-actions">
           <button type="button" class="btn ghost" onclick="closeCreate()">Huỷ</button>
           <button class="btn primary" type="submit">Tạo</button>
@@ -73,4 +79,5 @@
 
   <script src="{{ url_for('static', filename='js/lessonplan.js') }}?v=20250805"></script>
 </body>
+
 </html>

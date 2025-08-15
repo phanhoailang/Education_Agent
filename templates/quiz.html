@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quiz - Edu Mate</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/quiz.css') }}?v=20250814" />
+
+    <!-- MathJax cho LaTeX -->
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+            options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] }
+        };
+    </script>
+    <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+
+<body>
+    <!-- Header -->
+    <div class="header">
+        <a href="#" class="back-btn" onclick="goBack()">Quay lại</a>
+        <h1>📝 Quiz - Edu Mate</h1>
+        <div class="status-indicator">
+            <div class="status-dot"></div><span>Sẵn sàng</span>
+        </div>
+    </div>
+
+    <!-- Lưới 2 cột: Chat (trái) + Panel (phải) -->
+    <div class="page" id="page">
+        <!-- Cột Chat (hiển thị card) -->
+        <div class="col col-chat">
+            <div class="chat-container">
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message ai">
+                        <div class="message-avatar">🤖</div>
+                        <div class="message-content">
+                            <div>Xin chào! Tôi đang tải quiz của bạn...</div>
+                            <div class="typing-indicator">
+                                <span>Đang suy nghĩ</span>
+                                <div class="typing-dots">
+                                    <div class="dot"></div>
+                                    <div class="dot"></div>
+                                    <div class="dot"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Input (tuỳ chọn) -->
+                <div class="chat-input">
+                    <div class="input-actions"></div>
+                    <input type="text" class="input-field" id="userInput" placeholder="Nhập tin nhắn của bạn..."
+                        disabled>
+                    <button class="send-btn" id="sendBtn" disabled type="button">
+                        <svg class="send-icon" viewBox="0 0 24 24">
+                            <path d="M2,21L23,12L2,3V10L17,12L2,14V21Z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cột Panel Quiz -->
+        <div class="col col-panel" id="panelCol">
+            <section id="quizPanel" class="quiz-panel" aria-hidden="true">
+                <div class="quiz-panel__header">
+                    <div class="quiz-panel__nav">
+                        <button class="nav-tab active" onclick="switchTab('chat')">Chat</button>
+                        <button class="nav-tab" onclick="switchTab('quiz')">Quiz</button>
+                    </div>
+                    <div class="quiz-panel__title" id="quizPanelTitle"></div>
+                    <div class="quiz-panel__actions">
+                        <a id="panelDownloadLink" class="btn ghost" href="#" target="_blank" rel="noopener"
+                            style="display:none;">⬇️ Tải xuống</a>
+                        <button class="btn ghost" onclick="copyQuizContent()">📋 Sao chép</button>
+
+                        <!-- Chỉnh sửa trực tiếp trong panel -->
+                        <button class="btn primary" id="panelEditBtn" onclick="togglePanelEdit()">✏️ Chỉnh sửa</button>
+                        <button class="btn primary" id="panelSaveBtn" onclick="savePanelEdit()" style="display:none;">💾
+                            Lưu</button>
+                        <button class="btn" id="panelCancelBtn" onclick="togglePanelEdit(false)"
+                            style="display:none;">↩︎ Huỷ</button>
+
+                        <button class="btn close-btn" onclick="closeQuizPanel()">✕</button>
+                    </div>
+                </div>
+
+                <div class="quiz-panel__body" id="quizPanelBody">
+                    <!-- Viewer/Editor sẽ được render bởi JS -->
+                    <div class="doc" style="color:#9ca3af;">Chưa có quiz để hiển thị</div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Libs render Markdown -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+
+    <!-- Dữ liệu server inject -->
+    <script type="application/json" id="eduForm">{{ form_data | tojson | safe }}</script>
+    <script type="application/json" id="quizContent">{{ quiz_content | tojson | safe }}</script>
+    <script type="application/json" id="quizDownload">{{ quiz_download_url | tojson | safe }}</script>
+
+    <script src="{{ url_for('static', filename='js/quiz.js') }}?v=20250814"></script>
+</body>
+
+</html>

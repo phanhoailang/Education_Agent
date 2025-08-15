@@ -1,11 +1,28 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Chat - Edu Mate</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css') }}?v=20250805" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css') }}?v=20250814" />
+
+  <!-- MathJax v3: hiển thị LaTeX trong Markdown -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']],
+        processEscapes: true
+      },
+      options: {
+        skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+      }
+    };
+  </script>
+  <script id="mathjax" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
 </head>
+
 <body>
   <!-- Header -->
   <div class="header">
@@ -16,7 +33,7 @@
     </div>
   </div>
 
-  <!-- Lưới 2 cột: Chat (trái) + Plan (phải) -->
+  <!-- Lưới 2 cột: Chat (trái) + Panel (phải) -->
   <div class="page" id="page">
     <!-- Cột Chat -->
     <div class="col col-chat">
@@ -28,7 +45,11 @@
               <div>Xin chào! Tôi đang xử lý yêu cầu tạo nội dung giảng dạy của bạn...</div>
               <div class="typing-indicator">
                 <span>Đang suy nghĩ</span>
-                <div class="typing-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+                <div class="typing-dots">
+                  <div class="dot"></div>
+                  <div class="dot"></div>
+                  <div class="dot"></div>
+                </div>
               </div>
             </div>
           </div>
@@ -38,34 +59,43 @@
         <div class="chat-input">
           <div class="input-actions">
             <button class="action-btn" id="voiceBtn" title="Ghi âm" type="button">
-              <svg class="send-icon" viewBox="0 0 24 24"><path d="M12 2C13.1 2 14 2.9 14 4V12C14 13.1 13.1 14 12 14C10.9 14 10 13.1 10 12V4C10 2.9 10.9 2 12 2M19 11C19 14.53 16.39 17.44 13 17.93V21H11V17.93C7.61 17.44 5 14.53 5 11H7C7 13.76 9.24 16 12 16S17 13.76 17 11H19Z"/></svg>
+              <svg class="send-icon" viewBox="0 0 24 24">
+                <path
+                  d="M12 2C13.1 2 14 2.9 14 4V12C14 13.1 13.1 14 12 14C10.9 14 10 13.1 10 12V4C10 2.9 10.9 2 12 2M19 11C19 14.53 16.39 17.44 13 17.93V21H11V17.93C7.61 17.44 5 14.53 5 11H7C7 13.76 9.24 16 12 16S17 13.76 17 11H19Z" />
+              </svg>
             </button>
           </div>
           <input type="text" class="input-field" id="userInput" placeholder="Nhập tin nhắn của bạn..." disabled>
           <button class="send-btn" id="sendBtn" disabled type="button">
-            <svg class="send-icon" viewBox="0 0 24 24"><path d="M2,21L23,12L2,3V10L17,12L2,14V21Z"/></svg>
+            <svg class="send-icon" viewBox="0 0 24 24">
+              <path d="M2,21L23,12L2,3V10L17,12L2,14V21Z" />
+            </svg>
           </button>
         </div>
       </div>
     </div>
 
-    <!-- Cột Panel Plan -->
+    <!-- Cột Panel (dùng chung cho Plan / Quiz Markdown) -->
     <div class="col col-panel" id="panelCol">
       <section id="planPanel" class="plan-panel" aria-hidden="true">
         <div class="plan-panel__header">
           <div class="plan-panel__nav">
             <button class="nav-tab active" onclick="switchTab('chat')">Chat</button>
             <button class="nav-tab" onclick="switchTab('plan')">Plan</button>
+            <button class="nav-tab" onclick="switchTab('quiz')">Quiz</button>
           </div>
           <div class="plan-panel__title" id="planPanelTitle"></div>
           <div class="plan-panel__actions">
-            <a id="panelDownloadLink" class="btn ghost" href="#" target="_blank" rel="noopener" style="display:none;">⬇️ Tải Markdown</a>
-            <button class="btn ghost" onclick="copyPlanContent()">📋 Sao chép</button>
+            <a id="panelDownloadLink" class="btn ghost" href="#" target="_blank" rel="noopener" style="display:none;">⬇️
+              Tải về</a>
+            <button class="btn ghost" onclick="copyPanelContent()">📋 Sao chép</button>
 
             <!-- Chỉnh sửa trực tiếp trong panel -->
             <button class="btn primary" id="panelEditBtn" onclick="togglePanelEdit()">✏️ Chỉnh sửa</button>
-            <button class="btn primary" id="panelSaveBtn" onclick="savePanelEdit()" style="display:none;">💾 Lưu</button>
-            <button class="btn" id="panelCancelBtn" onclick="togglePanelEdit(false)" style="display:none;">↩︎ Huỷ</button>
+            <button class="btn primary" id="panelSaveBtn" onclick="savePanelEdit()" style="display:none;">💾
+              Lưu</button>
+            <button class="btn" id="panelCancelBtn" onclick="togglePanelEdit(false)" style="display:none;">↩︎
+              Huỷ</button>
 
             <!-- Tuỳ chọn: mở trang LessonPlan riêng -->
             <button class="btn" onclick="openLessonPlanPage()">🔗 Mở LessonPlan</button>
@@ -75,7 +105,6 @@
         </div>
 
         <div class="plan-panel__body" id="planPanelBody">
-          <!-- Viewer/Editor sẽ được render bởi JS -->
           <div class="doc" style="color:#9ca3af;">Chưa có nội dung để hiển thị</div>
         </div>
       </section>
@@ -90,7 +119,10 @@
   <script type="application/json" id="eduForm">{{ form_data | tojson | safe }}</script>
   <script type="application/json" id="markdownContent">{{ lesson_markdown | tojson | safe }}</script>
   <script type="application/json" id="mdDownload">{{ md_download_url | tojson | safe }}</script>
+  <script type="application/json" id="quizContent">{{ quiz_content | tojson | safe }}</script>
+  <script type="application/json" id="quizDownload">{{ quiz_download_url | tojson | safe }}</script>
 
-  <script src="{{ url_for('static', filename='js/chat.js') }}?v=20250805"></script>
+  <script src="{{ url_for('static', filename='js/chat.js') }}?v=20250814"></script>
 </body>
+
 </html>

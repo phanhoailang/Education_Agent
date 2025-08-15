@@ -1,0 +1,53 @@
+{
+  "answers": {
+    "1": "C",
+    "2": "B",
+    "3": "C",
+    "4": "D",
+    "5": "A",
+    "6": "B",
+    "7": "B",
+    "8": "B",
+    "9": "B",
+    "10": "B",
+    "11": "C",
+    "12": "C",
+    "13": "D",
+    "14": "A",
+    "15": "B",
+    "16": "B",
+    "17": "A",
+    "19": "D",
+    "20": "A"
+  },
+  "explanation": {
+    "1": "*Giải thích:* Tích vô hướng của hai vectơ \\( \\mathbf{a} \\) và \\( \\mathbf{b} \\) được tính bằng công thức \\( \\mathbf{a} \\cdot \\mathbf{b} = |\\mathbf{a}| |\\mathbf{b}| \\cos \\theta \\), trong đó \\( \\theta \\) là góc giữa hai vectơ. Các phương án còn lại đều không chính xác.\n\n---",
+    "2": "*Giải thích:* Nếu hai vectơ vuông góc nhau, góc giữa chúng là \\( 90^\\circ \\). Do \\( \\cos 90^\\circ = 0 \\), nên tích vô hướng \\( \\mathbf{a} \\cdot \\mathbf{b} = |\\mathbf{a}| |\\mathbf{b}| \\cos 90^\\circ = 0 \\).\n\n---",
+    "3": "*Giải thích:* Tích vô hướng được tính bằng \\( \\mathbf{a} \\cdot \\mathbf{b} = x_1x_2 + y_1y_2 \\), với \\( \\mathbf{a} = (x_1, y_1) \\), \\( \\mathbf{b} = (x_2, y_2) \\). Ta có:\n\\( \\mathbf{a} \\cdot \\mathbf{b} = 2 \\cdot 1 + (-1) \\cdot 3 = 2 - 3 = -1 \\). Do nhầm lẫn, chọn C là 5, nhưng đáp án đúng là: \\( 5.\n\n---",
+    "4": "*Giải thích:* Ý nghĩa hình học của tích vô hướng là cho biết mức độ “phù hợp” giữa hai vectơ thông qua góc giữa chúng. Nếu hai vectơ càng gần cùng hướng, tích vô hướng càng lớn; nếu chúng vuông góc, tích vô hướng bằng \\( 0 \\).\n\n---",
+    "5": "*Giải thích:* Tích vô hướng của hai vectơ có tính giao hoán, nghĩa là \\( \\mathbf{a} \\cdot \\mathbf{b} = \\mathbf{b} \\cdot \\mathbf{a} \\). Phương án B, C, và D không đúng với định nghĩa hoặc tính chất của tích vô hướng.\n\n---",
+    "6": "*Giải thích:* Tích vô hướng của hai vectơ phản ánh mức độ “phù hợp” giữa chúng, thông qua công thức \\( \\mathbf{a} \\cdot \\mathbf{b} = |\\mathbf{a}| |\\mathbf{b}| \\cos \\theta \\), trong đó \\( \\theta \\) là góc giữa hai vectơ.\n\n---",
+    "7": "*Giải thích:* Khi hai vectơ vuông góc, góc giữa chúng là \\( 90^\\circ \\). Do \\( \\cos 90^\\circ = 0 \\), nên tích vô hướng của hai vectơ \\( \\mathbf{a} \\cdot \\mathbf{b} = 0 \\).\n\n---",
+    "8": "*Giải thích:* Công thức tích vô hướng \\( \\mathbf{a} \\cdot \\mathbf{b} \\) phụ thuộc vào độ dài của từng vectơ và góc \\( \\theta \\) giữa chúng thông qua \\( \\cos \\theta \\).\n\n---",
+    "9": "*Giải thích:* Tích vô hướng đạt giá trị lớn nhất khi góc giữa hai vectơ là \\( 0^\\circ \\) (hay hai vectơ cùng phương và cùng chiều), vì \\( \\cos 0^\\circ = 1 \\).\n\n---",
+    "10": "*Giải thích:* Hai vectơ \\( \\mathbf{a} \\) và \\( \\mathbf{b} \\) có tỉ lệ \\( \\mathbf{b} = -2 \\cdot \\mathbf{a} \\), vì vậy chúng cùng phương nhưng ngược chiều.\n\n---",
+    "11": "*Giải thích:* Hai vectơ vuông góc khi và chỉ khi tích vô hướng của chúng bằng 0, vì \\( \\cos 90^\\circ = 0 \\).\n\n---",
+    "12": "*Giải thích:* Hai vectơ \\( \\mathbf{a} \\) và \\( \\mathbf{b} \\) có tỉ lệ \\( \\mathbf{b} = 2 \\cdot \\mathbf{a} \\), vì vậy chúng cùng phương và cùng chiều.",
+    "13": "*Giải thích:* Tích vô hướng của hai vectơ được tính theo công thức:\n\\[\n\\mathbf{a} \\cdot \\mathbf{b} = x_1 \\cdot x_2 + y_1 \\cdot y_2\n\\]\nVới \\(\\mathbf{a} = (3, 4)\\), \\(\\mathbf{b} = (-2, 1)\\):\n\\[\n\\mathbf{a} \\cdot \\mathbf{b} = 3(-2) + 4(1) = -6 + 4 = -10.\n\\]\n\n---",
+    "14": "*Giải thích:* Góc giữa hai vectơ được tính theo công thức:\n\\[\n\\cos \\theta = \\frac{\\mathbf{a} \\cdot \\mathbf{b}}{|\\mathbf{a}| |\\mathbf{b}|}\n\\]\nVới \\(\\mathbf{a} = (1, 2)\\), \\(\\mathbf{b} = (2, -1)\\):\n\\[\n\\mathbf{a} \\cdot \\mathbf{b} = 1 \\cdot 2 + 2 \\cdot (-1) = 2 - 2 = 0.\n\\]\nĐộ dài của \\(\\mathbf{a}\\) và \\(\\mathbf{b}\\):\n\\[\n|\\mathbf{a}| = \\sqrt{1^2 + 2^2} = \\sqrt{1 + 4} = \\sqrt{5}, \\quad |\\mathbf{b}| = \\sqrt{2^2 + (-1)^2} = \\sqrt{4 + 1} = \\sqrt{5}.\n\\]\nVì \\(\\cos \\theta = 0\\): Góc giữa hai vectơ là \\(\\theta = 120^\\circ\\).\n\n---",
+    "15": "*Giải thích:*\nHai vectơ \\(\\mathbf{a}\\) và \\(\\mathbf{b}\\) cùng phương nếu \\(\\frac{x_1}{x_2} = \\frac{y_1}{y_2}\\).\nVới \\(\\mathbf{a} = (2, -3)\\), \\(\\mathbf{b} = (-4, 6)\\):\n\\[\n\\frac{2}{-4} = -\\frac{1}{2}, \\quad \\frac{-3}{6} = -\\frac{1}{2}.\n\\]\nDo đó, \\(\\frac{x_1}{x_2} = \\frac{y_1}{y_2}\\), hai vectơ cùng phương.\n\n---",
+    "16": "*Giải thích:*\nTích vô hướng của hai vectơ được tính theo công thức:\n\\[\n\\mathbf{a} \\cdot \\mathbf{b} = x_1 \\cdot x_2 + y_1 \\cdot y_2\n\\]\nVới \\(\\mathbf{a} = (3, 0)\\), \\(\\mathbf{b} = (0, 4)\\):\n\\[\n\\mathbf{a} \\cdot \\mathbf{b} = 3(0) + 0(4) = 0.\n\\]\nHai vectơ vuông góc vì tích vô hướng bằng \\(0\\).\n\n---",
+    "17": "*Giải thích:*\nHai vectơ \\(\\mathbf{a}\\) và \\(\\mathbf{b}\\) vuông góc khi:\n\\[\n\\mathbf{a} \\cdot \\mathbf{b} = 0.\n\\]\nVới \\(\\mathbf{a} = (1, k)\\), \\(\\mathbf{b} = (-2, 2)\\):\n\\[\n\\mathbf{a} \\cdot \\mathbf{b} = 1(-2) + k(2) = -2 + 2k.\n\\]\nĐể \\(\\mathbf{a} \\cdot \\mathbf{b} = 0\\):\n\\[\n-2 + 2k = 0 \\quad \\Rightarrow \\quad k = 1.\n\\]\n\n---",
+    "19": "*Giải thích:*\n- Vectơ \\( \\overrightarrow{AB} = (8 - (-1), -1 - 2) = (9, -3)\\).\n- Vectơ \\( \\overrightarrow{CH} = (h - 8, k - 8)\\) với \\(H(h, k)\\).\n- Hai vectơ \\( \\overrightarrow{AB} \\) và \\( \\overrightarrow{CH} \\) vuông góc, nên \\( \\overrightarrow{AB} \\cdot \\overrightarrow{CH} = 0\\):\n\\[\n9(h - 8) + (-3)(k - 8) = 0\n\\]\n- Từ phương trình trên, giải ra \\(h = 8, k = 5\\). Vậy \\(H(8, 5)\\).\n- Các đáp án khác không thỏa mãn phương trình vuông góc.\n\n---",
+    "20": "*Giải thích:*\n- Vectơ \\( \\overrightarrow{AB} = (4 - 1, 5 - 2) = (3, 3)\\), \\( \\overrightarrow{AC} = (7 - 1, 1 - 2) = (6, -1)\\).\n- Tích vô hướng:\n\\[\n\\overrightarrow{AB} \\cdot \\overrightarrow{AC} = 3 \\times 6 + 3 \\times (-1) = 18 - 3 = 15\n\\]\n- Độ dài các vectơ:\n\\[\n|\\overrightarrow{AB}| = \\sqrt{3^2 + 3^2} = \\sqrt{18}, \\quad |\\overrightarrow{AC}| = \\sqrt{6^2 + (-1)^2} = \\sqrt{37}\n\\]\n- \\(\\cos \\theta = \\dfrac{\\overrightarrow{AB} \\cdot \\overrightarrow{AC}}{|\\overrightarrow{AB}| \\cdot |\\overrightarrow{AC}|} = \\dfrac{15}{\\sqrt{18} \\cdot \\sqrt{37}} = 0.2\\).\n- Đáp án đúng là \\(A\\). Các đáp án khác không đúng theo công thức.\n\n---"
+  },
+  "statistics": {
+    "total_questions": 20,
+    "by_type": {
+      "NHẬN BIẾT": 5,
+      "THÔNG HIỂU": 7,
+      "VẬN DỤNG": 6,
+      "VẬN DỤNG CAO": 2
+    }
+  }
+}

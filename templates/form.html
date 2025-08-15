@@ -1,21 +1,20 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Edu Mate - Trợ lý AI Giảng dạy</title>
 
   <!-- Font Awesome (icons) -->
-  <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
     integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
-    crossorigin="anonymous" referrerpolicy="no-referrer"
-  />
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
 
   <!-- CSS chính của form -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/form.css') }}?v=20250804">
 </head>
+
 <body>
   <div class="container">
     <!-- Header -->
@@ -41,12 +40,18 @@
             </label>
             <select class="select" id="grade" name="grade" required>
               <option value="">Chọn khối lớp</option>
-              <option value="1">Lớp 1</option><option value="2">Lớp 2</option>
-              <option value="3">Lớp 3</option><option value="4">Lớp 4</option>
-              <option value="5">Lớp 5</option><option value="6">Lớp 6</option>
-              <option value="7">Lớp 7</option><option value="8">Lớp 8</option>
-              <option value="9">Lớp 9</option><option value="10">Lớp 10</option>
-              <option value="11">Lớp 11</option><option value="12">Lớp 12</option>
+              <option value="1">Lớp 1</option>
+              <option value="2">Lớp 2</option>
+              <option value="3">Lớp 3</option>
+              <option value="4">Lớp 4</option>
+              <option value="5">Lớp 5</option>
+              <option value="6">Lớp 6</option>
+              <option value="7">Lớp 7</option>
+              <option value="8">Lớp 8</option>
+              <option value="9">Lớp 9</option>
+              <option value="10">Lớp 10</option>
+              <option value="11">Lớp 11</option>
+              <option value="12">Lớp 12</option>
             </select>
           </div>
 
@@ -68,8 +73,8 @@
             <label class="label" for="subject">
               <i class="fas fa-chalkboard-teacher"></i> Môn học*
             </label>
-            <input type="text" class="input" id="subject" name="subject"
-                   placeholder="Ví dụ: Toán, Văn, Anh..." required autocomplete="off">
+            <input type="text" class="input" id="subject" name="subject" placeholder="Ví dụ: Toán, Văn, Anh..." required
+              autocomplete="off">
           </div>
 
           <!-- Chủ đề -->
@@ -78,7 +83,7 @@
               <i class="fas fa-lightbulb"></i> Chủ đề bài học*
             </label>
             <input type="text" class="input" id="topic" name="topic"
-                   placeholder="Ví dụ: Phương trình bậc 2, Truyện ngắn..." required autocomplete="off">
+              placeholder="Ví dụ: Phương trình bậc 2, Truyện ngắn..." required autocomplete="off">
           </div>
 
           <!-- Thời lượng -->
@@ -86,8 +91,8 @@
             <label class="label" for="duration">
               <i class="fas fa-clock"></i> Thời gian (phút)
             </label>
-            <input type="number" class="input" id="duration" name="duration"
-                   placeholder="45" min="15" max="180" inputmode="numeric">
+            <input type="number" class="input" id="duration" name="duration" placeholder="45" min="15" max="180"
+              inputmode="numeric">
           </div>
 
           <!-- Phong cách -->
@@ -152,11 +157,8 @@
               <i class="fas fa-paperclip"></i> Đính kèm tài liệu
             </label>
             <div class="file-upload" id="fileUpload">
-              <input
-                type="file" id="files" name="files[]"
-                multiple
-                accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.jpg,.png"
-              />
+              <input type="file" id="files" name="files[]" multiple
+                accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.jpg,.png" />
               <label class="file-upload-label" for="files">
                 <div class="upload-icon"><i class="fas fa-cloud-upload-alt"></i></div>
                 <div class="upload-text">
@@ -189,4 +191,5 @@
   <!-- JS của form -->
   <script defer src="{{ url_for('static', filename='js/form.js') }}?v=20250804"></script>
 </body>
+
 </html>
