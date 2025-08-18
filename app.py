@@ -7,6 +7,7 @@ from uuid import uuid4
 from pathlib import Path
 from datetime import datetime
 from typing import Optional
+from modules.agents.EnhancedChatAgent import EnhancedChatAgent
 
 # === Đường dẫn tuyệt đối tới project / templates / static ===
 BASE_DIR = Path(__file__).resolve().parent
@@ -203,7 +204,7 @@ def create_app():
 
     def find_quiz_md_pair(qjson_path: Path, qdata: dict) -> Optional[Path]:
         """
-        Tìm file .md “cặp” với quiz JSON:
+        Tìm file .md "cặp" với quiz JSON:
         - Theo các key trong JSON: markdown_path / md_path / quiz_markdown_path
         - Cùng stem với file JSON trong thư mục QUIZ_OUTPUT_DIR
         """
@@ -303,14 +304,24 @@ def create_app():
     def process():
         try:
             form_data_raw = request.form.to_dict(flat=True)
-            content_types = request.form.getlist("content_type[]")
+            content_types = request.form.getlist("content_type[]")  # Lấy array checkbox
             files = request.files.getlist("files[]")
 
-            # Clear session keys để tránh hiện dữ liệu cũ
-            if "lesson_plan" not in content_types:
-                session.pop("md_basename", None)
-            if "quiz" not in content_types:
-                session.pop("quiz_basename", None)
+            print(f"🎯 [/process] Form data received: {form_data_raw}")
+            print(f"🎯 [/process] Content types: {content_types}")
+            print(f"🎯 [/process] Files: {[f.filename for f in files if f.filename]}")
+            
+            # Validation: Phải chọn ít nhất 1 loại content
+            if not content_types:
+                return jsonify({
+                    "error": "Validation failed",
+                    "details": "Vui lòng chọn ít nhất một loại nội dung (Kế hoạch giảng dạy hoặc Quiz)"
+                }), 400
+
+            # Clear session keys dựa trên lựa chọn hiện tại
+            session.pop("md_basename", None)
+            session.pop("quiz_basename", None)
+            print("🗑️ Cleared all previous session data")
 
             # Lưu file tạm (để flow xử lý)
             saved_files = []
@@ -320,79 +331,111 @@ def create_app():
                         file.save(tmp.name)
                         saved_files.append(tmp.name)
 
+            # Tạo JSON data cho flow
             json_data = {
                 "grade": form_data_raw.get("grade", ""),
                 "textbook": form_data_raw.get("textbook", ""),
                 "subject": form_data_raw.get("subject", ""),
                 "topic": form_data_raw.get("topic", ""),
                 "duration": form_data_raw.get("duration", ""),
-                "content_types": content_types,
+                "content_types": content_types,  # ✅ Key này phải khớp với flow.py
                 "teaching_style": form_data_raw.get("teaching_style", ""),
                 "difficulty": form_data_raw.get("difficulty", ""),
                 "additional_requirements": form_data_raw.get("additional_requirements", ""),
                 "files": saved_files,
                 "timestamp": form_data_raw.get("timestamp", ""),
+                
+                # Config cho quiz
+                "quiz_source": "material",  # hoặc "plan" nếu có UI
+                "quiz_config": {
+                    "difficulty": form_data_raw.get("difficulty", "medium"),
+                    "question_count": 10,
+                }
             }
 
             session["form_data"] = json_data
-            print("[/process] form_data:", json_data)
+            print(f"💾 [/process] Saved to session: {json_data}")
 
-            # Chạy pipeline tổng
+            # Chạy pipeline
+            print(f"\n🚀 Running flow with content_types: {content_types}")
             state = run_flow(json_data) or {}
             if not isinstance(state, dict):
                 state = {}
 
-            # ====== LESSON PLAN ======
-            lesson_plan = state.get("lesson_plan") or {}
-            md_path_pipeline = lesson_plan.get("markdown_path", "")
-            md_path = to_abs_path(md_path_pipeline)
-            output_dir = Path(app.config["OUTPUT_DIR"])
+            print(f"✅ Flow completed. State keys: {list(state.keys())}")
 
-            if (md_path is None) or (not Path(md_path).exists()) or (not Path(md_path).is_file()):
-                print(f"[/process] markdown_path không sẵn có/không phải file: {md_path_pipeline}")
-                complete_markdown = lesson_plan.get("complete_markdown", "")
-                fallback_name = f"lesson_{uuid4().hex}.md"
-                md_path = (output_dir / fallback_name).resolve()
-                try:
-                    md_path.write_text(complete_markdown or "", encoding="utf-8")
-                    print(f"[/process] Fallback -> đã ghi markdown vào: {md_path}")
-                except Exception as fe:
-                    print(f"[/process] Fallback ERROR khi ghi file: {fe}")
+            # ====== XỬ LÝ KẾT QUẢ LESSON PLAN ======
+            if "lesson_plan" in content_types:
+                print("📘 Processing lesson plan result...")
+                lesson_plan = state.get("lesson_plan") or {}
+                md_path_pipeline = lesson_plan.get("markdown_path", "")
+                md_path = to_abs_path(md_path_pipeline)
+                output_dir = Path(app.config["OUTPUT_DIR"])
 
-            md_basename = Path(md_path).name
-            session["md_basename"] = md_basename
-            print(f"[/process] md_basename lưu vào session: {md_basename}")
+                if (md_path is None) or (not Path(md_path).exists()) or (not Path(md_path).is_file()):
+                    print(f"[/process] markdown_path không sẵn có: {md_path_pipeline}")
+                    complete_markdown = lesson_plan.get("complete_markdown", "")
+                    fallback_name = f"lesson_{uuid4().hex}.md"
+                    md_path = (output_dir / fallback_name).resolve()
+                    try:
+                        md_path.write_text(complete_markdown or "", encoding="utf-8")
+                        print(f"[/process] Fallback -> đã ghi markdown vào: {md_path}")
+                    except Exception as fe:
+                        print(f"[/process] Fallback ERROR khi ghi file: {fe}")
 
-            # ====== QUIZ ======
-            quiz_path = None
-            # 1) Thử lấy từ state với các key phổ biến
-            quiz_state = state.get("quiz") or state.get("quiz_result") or {}
-            for k in ("json_path", "output_path", "path", "file_path", "filepath", "file", "quiz_path", "quiz_file"):
-                v = state.get(k) if k in state else quiz_state.get(k)
-                if v:
-                    p = to_abs_path(v)
-                    if p and p.exists() and p.is_file():
-                        quiz_path = p
-                        break
-            # 2) Nếu không có, nhưng user có chọn 'quiz' → dò file mới nhất
-            if not quiz_path and "quiz" in content_types:
-                topic_hint = json_data.get("topic", "") or json_data.get("subject", "")
-                quiz_path = find_latest_quiz(topic_hint=topic_hint)
-
-            if quiz_path and quiz_path.exists():
-                session["quiz_basename"] = quiz_path.name
-                print(f"[/process] quiz_basename lưu vào session: {quiz_path.name}")
-
-            # Điều hướng:
-            selected = set(content_types)
-            if selected == {"quiz"} and session.get("quiz_basename"):
-                return redirect(url_for("quiz_page"))
+                if md_path and Path(md_path).exists():
+                    md_basename = Path(md_path).name
+                    session["md_basename"] = md_basename
+                    print(f"✅ Lesson plan saved: {md_basename}")
+                else:
+                    print("⚠️ Không thể lưu lesson plan")
             else:
-                return redirect(url_for("chat"))
+                print("⏭️ Skip lesson plan processing (not selected)")
+
+            # ====== XỬ LÝ KẾT QUẢ QUIZ ======
+            if "quiz" in content_types:
+                print("📝 Processing quiz result...")
+                quiz_path = None
+                
+                # Tìm quiz result từ state
+                quiz_state = state.get("quiz") or state.get("quiz_result") or {}
+                for k in ("json_path", "output_path", "path", "file_path", "filepath", "file", "quiz_path", "quiz_file"):
+                    v = state.get(k) if k in state else quiz_state.get(k)
+                    if v:
+                        p = to_abs_path(v)
+                        if p and p.exists() and p.is_file():
+                            quiz_path = p
+                            break
+                
+                # Fallback: tìm file mới nhất
+                if not quiz_path:
+                    topic_hint = json_data.get("topic", "") or json_data.get("subject", "")
+                    quiz_path = find_latest_quiz(topic_hint=topic_hint)
+
+                if quiz_path and quiz_path.exists():
+                    session["quiz_basename"] = quiz_path.name
+                    print(f"✅ Quiz saved: {quiz_path.name}")
+                else:
+                    print("⚠️ Không tìm thấy quiz file")
+            else:
+                print("⏭️ Skip quiz processing (not selected)")
+
+            # ====== ĐIỀU HƯỚNG DựA TRÊN CHOICE ======
+            selected = set(content_types)
+            print(f"🎯 Final redirect decision for: {selected}")
+            
+            # Always redirect to chat page to show results
+            print("➡️ Redirect to chat page")
+            return redirect(url_for("chat"))
 
         except Exception as e:
             print("❌ Error in /process:", str(e))
-            return {"error": "Lỗi xử lý form", "details": str(e)}, 500
+            import traceback
+            traceback.print_exc()
+            return jsonify({
+                "error": "Lỗi xử lý form", 
+                "details": str(e)
+            }), 500
 
     @app.route("/chat")
     def chat():
@@ -400,6 +443,11 @@ def create_app():
             form_data = session.get("form_data", {})
             md_basename = session.get("md_basename", "")
             quiz_basename = session.get("quiz_basename", "")
+
+            print(f"🔍 [/chat] Debug - form_data keys: {list(form_data.keys())}")
+            print(f"🔍 [/chat] Debug - content_types: {form_data.get('content_types', [])}")
+            print(f"🔍 [/chat] Debug - md_basename: {md_basename}")
+            print(f"🔍 [/chat] Debug - quiz_basename: {quiz_basename}")
 
             # ----- Lesson plan -----
             lesson_markdown = ""
@@ -409,19 +457,20 @@ def create_app():
                 if md_path.is_file():
                     lesson_markdown = read_text_file(md_path)
                     md_download_url = url_for("lesson_download", filename=md_basename)
-                    print(f"[/chat] Sẽ hiển thị Markdown len={len(lesson_markdown)} từ {md_path}")
+                    print(f"[/chat] ✅ Lesson plan loaded: {len(lesson_markdown)} chars from {md_basename}")
                 else:
-                    print(f"[/chat] File markdown không tồn tại: {md_path}")
+                    print(f"[/chat] ❌ Lesson plan file not found: {md_path}")
             else:
-                print("[/chat] Chưa có md_basename trong session")
+                print("[/chat] ℹ️ No lesson plan in session")
 
-            # ----- Quiz (ưu tiên MD để hiển thị như Plan) -----
-            quiz_content = None       # dict: {"markdown": "..."} hoặc JSON (fallback)
+            # ----- Quiz -----
+            quiz_content = None
             quiz_download_url = ""
             if quiz_basename:
                 qp = Path(app.config["QUIZ_OUTPUT_DIR"]) / quiz_basename
                 if qp.is_file():
-                    # Đọc JSON (nếu cần lấy metadata)
+                    print(f"[/chat] 📝 Processing quiz file: {quiz_basename}")
+                    # Đọc JSON
                     try:
                         qdata = json.loads(qp.read_text(encoding="utf-8"))
                     except Exception:
@@ -434,20 +483,27 @@ def create_app():
                             quiz_md = md_pair.read_text(encoding="utf-8")
                             quiz_content = {"markdown": quiz_md}
                             quiz_download_url = url_for("quiz_download_md", filename=md_pair.name)
-                            print(f"[/chat] Quiz markdown found: {md_pair.name} (len={len(quiz_md)})")
+                            print(f"[/chat] ✅ Quiz markdown loaded: {len(quiz_md)} chars from {md_pair.name}")
                         except Exception as e:
-                            print(f"[/chat] Không đọc được quiz MD {md_pair}: {e}")
+                            print(f"[/chat] ❌ Cannot read quiz MD {md_pair}: {e}")
                             quiz_content = qdata or {}
-                            quiz_download_url = ""  # không ép JSON
+                            quiz_download_url = ""
                     else:
-                        # Fallback: không có MD -> vẫn inject JSON (UI có thể bỏ qua)
+                        # Fallback: chỉ có JSON
                         quiz_content = qdata or {}
-                        quiz_download_url = ""  # không ép JSON
-                        print(f"[/chat] Không tìm thấy quiz .md cặp cho {qp.name}")
+                        quiz_download_url = ""
+                        print(f"[/chat] ⚠️ No quiz .md pair found for {quiz_basename}, using JSON data")
                 else:
-                    print(f"[/chat] Quiz JSON không tồn tại: {qp}")
+                    print(f"[/chat] ❌ Quiz file not found: {qp}")
             else:
-                print("[/chat] Chưa có quiz_basename trong session")
+                print("[/chat] ℹ️ No quiz in session")
+
+            # Debug final data
+            print(f"[/chat] 📤 Sending to template:")
+            print(f"   - lesson_markdown: {len(lesson_markdown)} chars")
+            print(f"   - quiz_content: {type(quiz_content)} ({len(str(quiz_content)) if quiz_content else 0} chars)")
+            print(f"   - md_download_url: {md_download_url}")
+            print(f"   - quiz_download_url: {quiz_download_url}")
 
             return render_template(
                 "chat.html",
@@ -461,17 +517,9 @@ def create_app():
             return {"error": "Lỗi render trang chat", "details": str(e)}, 500
         except Exception as e:
             print("❌ Error in /chat:", str(e))
+            import traceback
+            traceback.print_exc()
             return {"error": "Lỗi render trang chat", "details": str(e)}, 500
-
-    @app.route("/lesson-plan")
-    def lesson_plan_page():
-        try:
-            return render_template("lessonplan.html")
-        except TemplateNotFound as e:
-            return {"error": "Lỗi render trang LessonPlan", "details": str(e)}, 500
-        except Exception as e:
-            print("❌ Error in /lesson-plan:", str(e))
-            return {"error": "Lỗi render trang LessonPlan", "details": str(e)}, 500
 
     @app.route("/quiz")
     def quiz_page():

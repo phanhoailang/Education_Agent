@@ -5,7 +5,42 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lesson Plan - Edu Mate</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/lessonplan.css') }}?v=20250805">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/lessonplan.css') }}?v=20250816">
+  
+  <!-- MathJax cho LaTeX trong lesson plans -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']],
+        processEscapes: true,
+        processEnvironments: true,
+        packages: {'[+]': ['ams', 'newcommand', 'configMacros']},
+        macros: {
+          R: "{\\mathbb{R}}",
+          N: "{\\mathbb{N}}",
+          Z: "{\\mathbb{Z}}",
+          Q: "{\\mathbb{Q}}",
+          C: "{\\mathbb{C}}"
+        }
+      },
+      svg: {
+        fontCache: 'global'
+      },
+      options: {
+        skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+        processHtmlClass: 'tex2jax_process',
+        ignoreHtmlClass: 'tex2jax_ignore'
+      },
+      startup: {
+        ready: function() {
+          MathJax.startup.defaultReady();
+          console.log('MathJax sẵn sàng cho Lesson Plan!');
+        }
+      }
+    };
+  </script>
+  <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 
 <body>
@@ -36,6 +71,13 @@
         <div class="toolbar-actions">
           <a class="btn" href="/chat">Chat AI</a>
           <button class="btn" id="editBtn" onclick="toggleEdit()" disabled>Chỉnh sửa</button>
+          <button class="btn slide" id="createSlideBtn" onclick="createSlide()" disabled>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="12" rx="2" ry="2"></rect>
+              <line x1="2" y1="20" x2="22" y2="20"></line>
+            </svg>
+            Tạo slide
+          </button>
           <button class="btn primary" id="saveBtn" onclick="save()" style="display:none;">💾 Lưu</button>
           <a class="btn" id="downloadBtn" href="#" target="_blank" rel="noopener" style="display:none;">⬇️ Tải
             Markdown</a>
@@ -44,7 +86,7 @@
       </div>
 
       <div id="container" class="container-pad">
-        <article id="viewer" class="viewer doc">
+        <article id="viewer" class="viewer doc tex2jax_process">
           <div class="empty">Chưa có bài giảng nào được chọn</div>
         </article>
         <textarea id="editor" class="editor" placeholder="Nhập Markdown kế hoạch bài giảng..."></textarea>
@@ -70,6 +112,47 @@
     </div>
   </div>
 
+  <!-- Modal tạo slide -->
+  <div id="slideModal" class="modal" aria-hidden="true">
+    <div class="modal__inner">
+      <h3>📊 Tạo slide từ kế hoạch bài giảng</h3>
+      <div class="slide-preview">
+        <div class="slide-info">
+          <p><strong>Bài giảng:</strong> <span id="slideTitle">-</span></p>
+          <p><strong>Số slide dự kiến:</strong> <span id="slideCount">-</span></p>
+        </div>
+        <div class="slide-options">
+          <div class="field">
+            <label>Template slide</label>
+            <select id="slideTemplate">
+              <option value="modern">Modern - Hiện đại</option>
+              <option value="classic">Classic - Cổ điển</option>
+              <option value="minimal">Minimal - Tối giản</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Định dạng xuất</label>
+            <select id="slideFormat">
+              <option value="pptx">PowerPoint (.pptx)</option>
+              <option value="html">HTML Slide</option>
+              <option value="pdf">PDF</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn ghost" onclick="closeSlideModal()">Huỷ</button>
+        <button class="btn slide" onclick="generateSlide()">
+          <div class="btn-loading" style="display: none;">
+            <div class="spinner"></div>
+            Đang tạo...
+          </div>
+          <span class="btn-text">🎨 Tạo slide</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -77,7 +160,7 @@
 
   <script type="application/json" id="plansData">{{ plans | default([], true) | tojson | safe }}</script>
 
-  <script src="{{ url_for('static', filename='js/lessonplan.js') }}?v=20250805"></script>
+  <script src="{{ url_for('static', filename='js/lessonplan.js') }}?v=20250816"></script>
 </body>
 
 </html>

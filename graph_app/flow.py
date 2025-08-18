@@ -286,11 +286,15 @@ class GenerateLessonPlan:
         self.pipeline = LessonPlanPipeline(llm)
 
     def __call__(self, state: FlowState):
+        # Kiểm tra có cần tạo lesson plan không
+        if not should_generate_lesson_plan(state):
+            print("⏭️ Skip tạo Lesson Plan (user không tick)")
+            return {"lesson_plan": {}, "__plan_done__": True}
         print("\n🎓 Bắt đầu tạo kế hoạch bài giảng...")
         prompt = state.get("user_prompt", "")
         filtered_chunks = state.get("filtered_chunks", [])
         if not prompt:
-            return {"lesson_plan": {"error": "Không có prompt để tạo bài giảng"}}
+            return {"lesson_plan": {"error": "Không có prompt để tạo bài giảng"}, "__plan_done__": True}
         lesson_plan = self.pipeline.create_full_lesson_plan(prompt, filtered_chunks)
         print("✅ Hoàn thành tạo kế hoạch bài giảng!")
         if "output_path" in lesson_plan:
@@ -303,6 +307,11 @@ class GenerateQuiz:
         self.pipeline = QuizPipeline(llm)
 
     def __call__(self, state: FlowState):
+        # Kiểm tra có cần tạo quiz không
+        if not should_generate_quiz(state):
+            print("⏭️ Skip tạo Quiz (user không tick)")
+            return {"quiz": {}, "__quiz_done__": True}
+        
         print("\n📝 Bắt đầu tạo Quiz...")
         form = state.get("form_data", {}) or {}
         mode = form.get("quiz_source", "material")  # "material" | "plan"
@@ -348,40 +357,141 @@ def should_call_agent(state: FlowState):
 
 
 def first_after_filter(state: FlowState):
-    """Sau filter_chunks: quyết định sinh plan hay quiz trước."""
+    """Sau filter_chunks: quyết định sinh plan hay quiz trước dựa trên checkbox."""
     form = state.get("form_data", {}) or {}
-    outputs = set(form.get("outputs", ["plan", "quiz"]))
-    quiz_source = form.get("quiz_source", "material")
-
-    # Chỉ một đầu ra
-    if outputs == {"plan"}:
+    
+    # Lấy content_types từ form (từ checkbox)
+    content_types = form.get("content_types", [])
+    
+    # DEBUG: In ra để kiểm tra
+    print(f"🔍 [DEBUG] form keys: {list(form.keys())}")
+    print(f"🔍 [DEBUG] content_types value: {content_types}")
+    print(f"🔍 [DEBUG] content_types type: {type(content_types)}")
+    
+    # Ensure content_types is a list
+    if not isinstance(content_types, list):
+        if isinstance(content_types, str):
+            content_types = [content_types]
+        else:
+            content_types = []
+    
+    # Convert thành set để dễ so sánh
+    if isinstance(content_types, list):
+        outputs = set(content_types)
+    else:
+        print(f"⚠️ [WARNING] content_types không phải list: {content_types}")
+        outputs = set()
+    
+    print(f"🎯 [first_after_filter] User chọn: {outputs}")
+    
+    # Convert thành set để dễ so sánh
+    outputs = set(content_types)
+    print(f"🎯 [first_after_filter] User chọn: {outputs}")
+    
+    # Case 1: Chỉ tạo lesson plan
+    if outputs == {"lesson_plan"}:
+        print("✅ Chỉ tạo Kế hoạch giảng dạy")
         return "generate_lesson_plan"
+    
+    # Case 2: Chỉ tạo quiz  
     if outputs == {"quiz"}:
+        print("✅ Chỉ tạo Quiz")
         return "generate_quiz"
-
-    # Cả hai
-    if quiz_source == "plan":
-        return "generate_lesson_plan"   # quiz cần dựa vào plan => làm plan trước
-    return "generate_quiz"               # mặc định: quiz theo tài liệu trước
+    
+    # Case 3: Tạo cả hai - luôn tạo plan trước để quiz có thể sử dụng
+    if "lesson_plan" in outputs and "quiz" in outputs:
+        print("✅ Tạo cả hai: Plan trước, Quiz sau")
+        return "generate_lesson_plan"
+    
+    # Fallback: mặc định tạo lesson plan nếu có lesson_plan
+    if "lesson_plan" in outputs:
+        print(f"⚠️ Fallback tạo lesson plan từ {outputs}")
+        return "generate_lesson_plan"
+    elif "quiz" in outputs:
+        print(f"⚠️ Fallback tạo quiz từ {outputs}")
+        return "generate_quiz"
+    else:
+        print(f"❌ Không có lựa chọn hợp lệ từ {outputs}, mặc định tạo lesson plan")
+        return "generate_lesson_plan"
 
 
 def route_after_plan(state: FlowState):
-    """Sau generate_lesson_plan: nếu còn cần quiz và chưa làm => generate_quiz, ngược lại END."""
+    """Sau generate_lesson_plan: kiểm tra còn cần quiz không."""
     form = state.get("form_data", {}) or {}
-    outputs = set(form.get("outputs", ["plan", "quiz"]))
+    content_types = form.get("content_types", [])
+    
+    # Ensure it's a list
+    if not isinstance(content_types, list):
+        if isinstance(content_types, str):
+            content_types = [content_types]
+        else:
+            content_types = []
+    
+    outputs = set(content_types)
+    print(f"🔄 [route_after_plan] Đã hoàn thành Plan. User chọn: {outputs}")
+    
+    # Nếu user có tick quiz và chưa làm quiz
     if "quiz" in outputs and not state.get("__quiz_done__", False):
+        print("➡️ Tiếp tục tạo Quiz")
         return "generate_quiz"
+    
+    print("🏁 Hoàn thành - chỉ cần Plan")
     return "END"
 
 
 def route_after_quiz(state: FlowState):
-    """Sau generate_quiz: nếu còn cần plan và chưa làm => generate_lesson_plan, ngược lại END."""
+    """Sau generate_quiz: kiểm tra còn cần plan không."""
     form = state.get("form_data", {}) or {}
-    outputs = set(form.get("outputs", ["plan", "quiz"]))
-    if "plan" in outputs and not state.get("__plan_done__", False):
+    content_types = form.get("content_types", [])
+    
+    # Ensure it's a list
+    if not isinstance(content_types, list):
+        if isinstance(content_types, str):
+            content_types = [content_types]
+        else:
+            content_types = []
+    
+    outputs = set(content_types)
+    print(f"🔄 [route_after_quiz] Đã hoàn thành Quiz. User chọn: {outputs}")
+    
+    # Nếu user có tick plan và chưa làm plan  
+    if "lesson_plan" in outputs and not state.get("__plan_done__", False):
+        print("➡️ Tiếp tục tạo Lesson Plan")
         return "generate_lesson_plan"
+    
+    print("🏁 Hoàn thành - chỉ cần Quiz")
     return "END"
 
+##Skip Logic
+def should_generate_lesson_plan(state: FlowState):
+    """Kiểm tra có cần tạo lesson plan không."""
+    form = state.get("form_data", {}) or {}
+    content_types = form.get("content_types", [])
+    
+    if not isinstance(content_types, list):
+        if isinstance(content_types, str):
+            content_types = [content_types]
+        else:
+            content_types = []
+    
+    should_generate = "lesson_plan" in content_types
+    print(f"🤔 [should_generate_lesson_plan] {should_generate} (from {content_types})")
+    return should_generate
+
+def should_generate_quiz(state: FlowState):
+    """Kiểm tra có cần tạo quiz không."""  
+    form = state.get("form_data", {}) or {}
+    content_types = form.get("content_types", [])
+    
+    if not isinstance(content_types, list):
+        if isinstance(content_types, str):
+            content_types = [content_types]
+        else:
+            content_types = []
+    
+    should_generate = "quiz" in content_types
+    print(f"🤔 [should_generate_quiz] {should_generate} (from {content_types})")
+    return should_generate
 
 # ========================= LLMs =========================
 llm = GPTClient(

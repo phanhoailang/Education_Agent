@@ -344,19 +344,60 @@ body {
 }
 
 .doc {
-    line-height: 1.6;
+    line-height: 1.7;
+    font-size: 15px;
 }
 
 .doc h1,
-h2,
-h3,
-h4 {
-    margin-top: 18px;
+.doc h2,
+.doc h3,
+.doc h4 {
+    margin-top: 24px;
+    margin-bottom: 12px;
+    color: #111827;
+}
+
+.doc h1 {
+    font-size: 28px;
+    font-weight: 800;
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 8px;
+}
+
+.doc h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.doc h3 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.doc p {
+    margin: 12px 0;
+    color: #1f2937;
+}
+
+.doc ul, .doc ol {
+    margin: 12px 0;
+    padding-left: 24px;
+}
+
+.doc li {
+    margin: 6px 0;
+    line-height: 1.6;
 }
 
 .doc table {
     border-collapse: collapse;
     width: 100%;
+    margin: 16px 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
 }
 
 .doc table,
@@ -367,10 +408,116 @@ h4 {
 
 .doc th,
 .doc td {
-    padding: 8px;
+    padding: 12px;
+    text-align: left;
+}
+
+.doc th {
+    background: #f8f9fa;
+    font-weight: 600;
+}
+
+.doc blockquote {
+    margin: 16px 0;
+    padding: 12px 16px;
+    border-left: 4px solid var(--primary);
+    background: #f8f9ff;
+    border-radius: 0 8px 8px 0;
+    color: #374151;
+}
+
+/* LaTeX/MathJax Styling - QUAN TRỌNG */
+.doc .MathJax {
+    color: #1f2937 !important;
+    font-size: 1.1em !important;
+}
+
+.doc .MathJax[display="true"] {
+    margin: 16px auto !important;
+    text-align: center !important;
+    display: block !important;
+}
+
+.doc .MathJax[display="false"] {
+    display: inline !important;
+    margin: 0 2px !important;
+}
+
+/* MathJax container styling */
+mjx-container {
+    line-height: normal !important;
+    margin: 0.2em 0 !important;
+}
+
+mjx-container[display="true"] {
+    display: block !important;
+    text-align: center !important;
+    margin: 1em auto !important;
+    padding: 8px 0 !important;
+}
+
+mjx-container[display="false"] {
+    display: inline !important;
+    margin: 0 0.15em !important;
+}
+
+/* Math expressions trong list items */
+.doc li .MathJax,
+.doc li mjx-container {
+    margin: 0 0.1em !important;
+}
+
+/* Math expressions trong headers */
+.doc h1 .MathJax,
+.doc h2 .MathJax,
+.doc h3 .MathJax,
+.doc h4 .MathJax {
+    font-size: inherit !important;
+}
+
+/* Cải thiện hiển thị fractions và radicals */
+mjx-math .mjx-frac {
+    margin: 0 0.1em !important;
+}
+
+mjx-math .mjx-sqrt {
+    margin: 0 0.1em !important;
+}
+
+/* Style cho các symbols toán học đặc biệt */
+.doc .math-symbol {
+    font-family: 'Times New Roman', Times, serif;
+    font-style: italic;
+    margin: 0 0.1em;
+}
+
+/* Loading state cho math */
+.math-loading {
+    background: #f3f4f6;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-family: monospace;
+    font-size: 0.9em;
+    color: var(--muted);
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.6;
+    }
 }
 
 /* Editor */
+.panel-editor {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
 .panel-editor:focus {
     outline: none;
     box-shadow: 0 0 0 3px rgba(124, 58, 237, .12);
@@ -385,5 +532,15 @@ h4 {
     .quiz-panel {
         height: auto;
         min-height: 60vh;
+    }
+    
+    /* LaTeX responsive */
+    .doc .MathJax {
+        font-size: 1em !important;
+    }
+    
+    mjx-container[display="true"] {
+        margin: 0.8em auto !important;
+        padding: 4px 0 !important;
     }
 }

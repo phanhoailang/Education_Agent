@@ -102,7 +102,7 @@ async function handleFormSubmit(e) {
     try {
       const j = await resp.json();
       errText = j.details || j.error || errText;
-    } catch (_) {}
+    } catch (_) { }
     throw new Error(errText);
   } catch (err) {
     console.error("Submit error:", err);

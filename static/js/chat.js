@@ -420,8 +420,11 @@ function openQuizPanelMarkdown(markdownString, downloadUrl) {
 }
 window.openQuizPanelMarkdown = openQuizPanelMarkdown;
 
-/* ===== Init ===== */
+
+/* ===== Enhanced Init với debug chi tiết ===== */
 function init() {
+  console.log("🚀 [init] Starting chat initialization...");
+  
   const status = document.querySelector(".status-indicator span");
   const input = byId("userInput");
   const send = byId("sendBtn");
@@ -429,58 +432,181 @@ function init() {
   const formData = readJSONFromScript("eduForm", {});
   const markdown = readJSONFromScript("markdownContent", "");
   const mdDownloadUrl = readJSONFromScript("mdDownload", "");
+  
+  console.log("📊 [init] Data loaded:");
+  console.log("  - formData:", formData);
+  console.log("  - markdown length:", markdown.length);
+  console.log("  - mdDownloadUrl:", mdDownloadUrl);
 
-  // Plan
-  if (markdown && markdown.trim()) {
-    showLessonCard(markdown, mdDownloadUrl || "", "", formData);
-    PANEL_MODE = "plan";
-    renderPanelFromCurrent();
-  } else {
-    try {
-      const ss = JSON.parse(sessionStorage.getItem("currentPlan") || "null");
-      if (ss && ss.markdown) {
-        currentPlanData = ss;
-        showLessonCard(ss.markdown, ss.downloadUrl || "", ss.fileName || "", ss.formData || {});
-        requestAnimationFrame(sizeColumns);
+  // ===== LESSON PLAN PROCESSING =====
+  const contentTypes = formData.content_types || [];
+  console.log("🎯 [init] Content types:", contentTypes);
+  
+  if (contentTypes.includes("lesson_plan")) {
+    console.log("📘 [init] Processing lesson plan...");
+    if (markdown && markdown.trim()) {
+      console.log("✅ [init] Showing lesson plan card from server data");
+      showLessonCard(markdown, mdDownloadUrl || "", "", formData);
+      PANEL_MODE = "plan";
+      renderPanelFromCurrent();
+    } else {
+      console.log("🔄 [init] No server data, checking session storage...");
+      try {
+        const ss = JSON.parse(sessionStorage.getItem("currentPlan") || "null");
+        if (ss && ss.markdown) {
+          console.log("✅ [init] Restored lesson plan from session storage");
+          currentPlanData = ss;
+          showLessonCard(ss.markdown, ss.downloadUrl || "", ss.fileName || "", ss.formData || {});
+          requestAnimationFrame(sizeColumns);
+        } else {
+          console.log("ℹ️ [init] No lesson plan data found");
+        }
+      } catch (e) {
+        console.error("❌ [init] Error loading lesson plan from session:", e);
       }
-    } catch { }
+    }
+  } else {
+    console.log("⏭️ [init] Lesson plan not selected, skipping");
   }
 
-  // Quiz (Markdown được inject qua quizContent.markdown)
-  const quizInjected = readJSONFromScript("quizContent", null);
-  const quizMd = (quizInjected && typeof quizInjected === "object") ? (quizInjected.markdown || "") : "";
-  const quizDl = readJSONFromScript("quizDownload", "");
-  if (quizMd && quizMd.trim()) {
-    showQuizMdCard(quizMd, quizDl || "", "", formData);
-    // Không tự mở để tránh đè panel Plan; người dùng bấm card để mở.
-  } else {
-    try {
-      const ssq = JSON.parse(sessionStorage.getItem("currentQuizMd") || "null");
-      if (ssq && ssq.markdown) {
-        currentQuizData = ssq;
-        showQuizMdCard(ssq.markdown, ssq.downloadUrl || "", ssq.fileName || "", ssq.formData || {});
+  // ===== QUIZ PROCESSING =====
+  if (contentTypes.includes("quiz")) {
+    console.log("📝 [init] Processing quiz...");
+    const quizInjected = readJSONFromScript("quizContent", null);
+    const quizMd = (quizInjected && typeof quizInjected === "object") ? (quizInjected.markdown || "") : "";
+    const quizDl = readJSONFromScript("quizDownload", "");
+    
+    console.log("📊 [init] Quiz data:");
+    console.log("  - quizInjected:", quizInjected);
+    console.log("  - quizMd length:", quizMd.length);
+    console.log("  - quizDl:", quizDl);
+    
+    if (quizMd && quizMd.trim()) {
+      console.log("✅ [init] Showing quiz card from server data");
+      showQuizMdCard(quizMd, quizDl || "", "", formData);
+    } else {
+      console.log("🔄 [init] No server quiz data, checking session storage...");
+      try {
+        const ssq = JSON.parse(sessionStorage.getItem("currentQuizMd") || "null");
+        if (ssq && ssq.markdown) {
+          console.log("✅ [init] Restored quiz from session storage");
+          currentQuizData = ssq;
+          showQuizMdCard(ssq.markdown, ssq.downloadUrl || "", ssq.fileName || "", ssq.formData || {});
+        } else {
+          console.log("ℹ️ [init] No quiz data found");
+        }
+      } catch (e) {
+        console.error("❌ [init] Error loading quiz from session:", e);
       }
-    } catch { }
+    }
+  } else {
+    console.log("⏭️ [init] Quiz not selected, skipping");
   }
 
+  // ===== UI SETUP =====
   if (status) status.textContent = "Sẵn sàng chat";
-  if (input) { input.disabled = false; input.placeholder = "Nhập tin nhắn của bạn..."; }
+  if (input) { 
+    input.disabled = false; 
+    input.placeholder = "Nhập tin nhắn của bạn..."; 
+  }
   if (send) send.disabled = false;
 
   sizeColumns();
   window.addEventListener("resize", sizeColumns);
 
+  // Event listeners
   input?.addEventListener("keypress", (e) => {
     if (e.key === "Enter" && !input.disabled) {
-      const v = input.value.trim(); if (!v) return;
+      const v = input.value.trim(); 
+      if (!v) return;
       addUserMessage(escapeHTML(v));
       input.value = "";
     }
   });
+  
   send?.addEventListener("click", () => {
-    const v = input.value?.trim(); if (!v) return;
+    const v = input.value?.trim(); 
+    if (!v) return;
     addUserMessage(escapeHTML(v));
     input.value = "";
   });
+
+  console.log("✅ [init] Initialization complete");
 }
+
+/* ===== Enhanced card functions với debug ===== */
+function showLessonCard(markdown, downloadUrl = "", fileName = "", formData = {}) {
+  console.log("📘 [showLessonCard] Creating lesson plan card...");
+  console.log("  - markdown length:", markdown.length);
+  console.log("  - downloadUrl:", downloadUrl);
+  console.log("  - formData:", formData);
+  
+  const info = extractPlanInfoFromForm(formData);
+  const plan = savePlanToStorage({ ...info, markdown, downloadUrl, fileName, formData });
+  const preview = (markdown || "").substring(0, 170).replace(/[#*_>\-\|]/g, "").trim() + "...";
+
+  const card = `
+    <div class="plan-card" onclick="openPlanPanelFromCurrent()">
+      <div class="plan-card__icon">📘</div>
+      <div>
+        <div class="plan-card__title">Kế hoạch bài giảng đã tạo thành công!</div>
+        <ul class="plan-card__meta">
+          <li><strong>Môn học:</strong>&nbsp;${escapeHTML(plan.subject)}</li>
+          <li><strong>Lớp:</strong>&nbsp;${escapeHTML(plan.grade)}</li>
+          <li><strong>Thời gian:</strong>&nbsp;${escapeHTML(plan.duration)}</li>
+          <li><strong>Ngày tạo:</strong>&nbsp;${escapeHTML(plan.date)}</li>
+        </ul>
+        <div style="font-size:12px;color:#6b7280;margin:6px 0 10px 0;border-top:1px solid #e9ecef;padding-top:8px;">
+          <strong>Nội dung xem trước:</strong><br>${escapeHTML(preview)}
+        </div>
+        <div class="plan-card__footer">
+          ${downloadUrl ? `<a href="${escapeHTML(downloadUrl)}" target="_blank" rel="noopener" class="chip-btn" onclick="event.stopPropagation()">⬇️ Tải Markdown</a>` : ""}
+          <button class="chip-btn view" onclick="event.stopPropagation(); openPlanPanelFromCurrent()">👁 Xem</button>
+          <button class="chip-btn edit" onclick="event.stopPropagation(); PANEL_MODE='plan'; togglePanelEdit(true); openPlanPanelFromCurrent()">✏️ Sửa nhanh</button>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  addAIMessage(card);
+  console.log("✅ [showLessonCard] Card added to chat");
+}
+
+function showQuizMdCard(markdown, downloadUrl = "", fileName = "", formData = {}) {
+  console.log("📝 [showQuizMdCard] Creating quiz card...");
+  console.log("  - markdown length:", markdown.length);
+  console.log("  - downloadUrl:", downloadUrl);
+  console.log("  - formData:", formData);
+  
+  const info = extractQuizInfoFromForm(formData);
+  const quiz = saveQuizMdToStorage({ ...info, markdown, downloadUrl, fileName, formData });
+  const preview = (markdown || "").substring(0, 160).replace(/[#*_>\-\|]/g, "").trim() + "...";
+
+  const card = `
+    <div class="plan-card" onclick="openQuizPanelFromCurrent()">
+      <div class="plan-card__icon">📝</div>
+      <div>
+        <div class="plan-card__title">Quiz đã tạo thành công (Markdown)</div>
+        <ul class="plan-card__meta">
+          <li><strong>Môn học:</strong>&nbsp;${escapeHTML(quiz.subject)}</li>
+          <li><strong>Lớp:</strong>&nbsp;${escapeHTML(quiz.grade)}</li>
+          <li><strong>Ngày tạo:</strong>&nbsp;${escapeHTML(quiz.date)}</li>
+        </ul>
+        <div style="font-size:12px;color:#6b7280;margin:6px 0 10px 0;border-top:1px solid #e9ecef;padding-top:8px;">
+          <strong>Nội dung xem trước:</strong><br>${escapeHTML(preview)}
+        </div>
+        <div class="plan-card__footer">
+          ${downloadUrl ? `<a href="${escapeHTML(downloadUrl)}" target="_blank" rel="noopener" class="chip-btn" onclick="event.stopPropagation()">⬇️ Tải Markdown</a>` : ""}
+          <button class="chip-btn view" onclick="event.stopPropagation(); openQuizPanelFromCurrent()">👁 Xem</button>
+          <button class="chip-btn edit" onclick="event.stopPropagation(); PANEL_MODE='quiz'; togglePanelEdit(true); openQuizPanelFromCurrent()">✏️ Sửa nhanh</button>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  addAIMessage(card);
+  console.log("✅ [showQuizMdCard] Card added to chat");
+}
+
+// Rest of the code remains the same...
 window.addEventListener("DOMContentLoaded", init);

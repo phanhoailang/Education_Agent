@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tạo Slide - Edu Mate</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/slide.css') }}">
+</head>
+
+<body>
+    <div class="header">
+        <div class="header-left">
+            <a class="btn ghost" href="/lessonplan">← Về Lesson Plan</a>
+            <h2>🎨 Tạo Slide từ Kế hoạch Bài giảng</h2>
+        </div>
+        <div class="status-indicator">
+            <div class="status-dot"></div>
+            <span>Sẵn sàng</span>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <!-- Left Panel - Lesson Plan Info -->
+        <div class="left-panel">
+            <div class="lesson-info">
+                <h3>📚 Thông tin bài giảng</h3>
+                <div class="info-card">
+                    <div class="info-item">
+                        <label>Tiêu đề:</label>
+                        <span id="lessonTitle">Đang tải...</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Môn học:</label>
+                        <span id="lessonSubject">-</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Lớp:</label>
+                        <span id="lessonGrade">-</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Thời gian:</label>
+                        <span id="lessonDuration">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preview -->
+            <div class="preview-section">
+                <h4>👁️ Preview slide</h4>
+                <div class="slide-preview" id="slidePreview">
+                    <div class="preview-slide">
+                        <div class="preview-header">
+                            <h5>Slide mẫu</h5>
+                        </div>
+                        <div class="preview-content">
+                            <p>Nội dung sẽ hiển thị ở đây...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel - Configuration -->
+        <div class="right-panel">
+            <form id="slideConfigForm">
+                <!-- Style Selection -->
+                <div class="config-section">
+                    <h3>🎨 Style Template</h3>
+                    <div class="style-grid">
+                        <div class="style-card active" data-style="modern">
+                            <div class="style-preview modern-preview"></div>
+                            <span>Modern</span>
+                        </div>
+                        <div class="style-card" data-style="classic">
+                            <div class="style-preview classic-preview"></div>
+                            <span>Classic</span>
+                        </div>
+                        <div class="style-card" data-style="minimal">
+                            <div class="style-preview minimal-preview"></div>
+                            <span>Minimal</span>
+                        </div>
+                        <div class="style-card" data-style="creative">
+                            <div class="style-preview creative-preview"></div>
+                            <span>Creative</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Slide Count -->
+                <div class="config-section">
+                    <h3>📄 Số lượng slide</h3>
+                    <div class="slide-count-control">
+                        <button type="button" class="count-btn" onclick="changeSlideCount(-1)">-</button>
+                        <input type="number" id="slideCount" value="10" min="3" max="50">
+                        <button type="button" class="count-btn" onclick="changeSlideCount(1)">+</button>
+                    </div>
+                    <div class="count-info">
+                        <span>Khuyến nghị: 8-15 slide cho bài 45 phút</span>
+                    </div>
+                </div>
+
+                <!-- Color Theme -->
+                <div class="config-section">
+                    <h3>🎨 Tone màu</h3>
+                    <div class="color-grid">
+                        <div class="color-option active" data-color="blue">
+                            <div class="color-circle" style="background: linear-gradient(45deg, #3b82f6, #1d4ed8);"></div>
+                            <span>Xanh dương</span>
+                        </div>
+                        <div class="color-option" data-color="green">
+                            <div class="color-circle" style="background: linear-gradient(45deg, #10b981, #059669);"></div>
+                            <span>Xanh lá</span>
+                        </div>
+                        <div class="color-option" data-color="purple">
+                            <div class="color-circle" style="background: linear-gradient(45deg, #8b5cf6, #7c3aed);"></div>
+                            <span>Tím</span>
+                        </div>
+                        <div class="color-option" data-color="orange">
+                            <div class="color-circle" style="background: linear-gradient(45deg, #f59e0b, #d97706);"></div>
+                            <span>Cam</span>
+                        </div>
+                        <div class="color-option" data-color="red">
+                            <div class="color-circle" style="background: linear-gradient(45deg, #ef4444, #dc2626);"></div>
+                            <span>Đỏ</span>
+                        </div>
+                        <div class="color-option" data-color="gray">
+                            <div class="color-circle" style="background: linear-gradient(45deg, #6b7280, #4b5563);"></div>
+                            <span>Xám</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Font Settings -->
+                <div class="config-section">
+                    <h3>🔤 Font chữ</h3>
+                    <div class="font-options">
+                        <select id="fontFamily">
+                            <option value="inter">Inter (Hiện đại)</option>
+                            <option value="roboto">Roboto (Dễ đọc)</option>
+                            <option value="open-sans">Open Sans (Truyền thống)</option>
+                            <option value="montserrat">Montserrat (Sang trọng)</option>
+                        </select>
+                        <div class="font-size-control">
+                            <label>Kích thước chữ:</label>
+                            <input type="range" id="fontSize" min="12" max="24" value="16">
+                            <span id="fontSizeValue">16px</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Layout Options -->
+                <div class="config-section">
+                    <h3>📐 Bố cục</h3>
+                    <div class="layout-options">
+                        <div class="layout-card active" data-layout="standard">
+                            <div class="layout-preview">
+                                <div class="layout-header"></div>
+                                <div class="layout-content"></div>
+                            </div>
+                            <span>Chuẩn</span>
+                        </div>
+                        <div class="layout-card" data-layout="sidebar">
+                            <div class="layout-preview">
+                                <div class="layout-sidebar"></div>
+                                <div class="layout-main"></div>
+                            </div>
+                            <span>Thanh bên</span>
+                        </div>
+                        <div class="layout-card" data-layout="split">
+                            <div class="layout-preview">
+                                <div class="layout-left"></div>
+                                <div class="layout-right"></div>
+                            </div>
+                            <span>Chia đôi</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Output Format -->
+                <div class="config-section">
+                    <h3>📤 Định dạng xuất</h3>
+                    <div class="format-options">
+                        <label class="format-radio">
+                            <input type="radio" name="format" value="pptx" checked>
+                            <span class="format-label">
+                                <strong>PowerPoint (.pptx)</strong>
+                                <small>Tương thích Microsoft PowerPoint</small>
+                            </span>
+                        </label>
+                        <label class="format-radio">
+                            <input type="radio" name="format" value="html">
+                            <span class="format-label">
+                                <strong>HTML Presentation</strong>
+                                <small>Chạy trên trình duyệt web</small>
+                            </span>
+                        </label>
+                        <label class="format-radio">
+                            <input type="radio" name="format" value="pdf">
+                            <span class="format-label">
+                                <strong>PDF Document</strong>
+                                <small>Định dạng tài liệu không thay đổi</small>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Advanced Options -->
+                <div class="config-section">
+                    <h3>⚙️ Tùy chọn nâng cao</h3>
+                    <div class="advanced-options">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="includeNotes" checked>
+                            <span>Bao gồm ghi chú giảng viên</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="includeQuestions">
+                            <span>Tự động thêm câu hỏi kiểm tra</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="includeImages">
+                            <span>Tự động tìm hình ảnh minh họa</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="includeAnimations">
+                            <span>Thêm hiệu ứng chuyển slide</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Generate Button -->
+                <div class="generate-section">
+                    <button type="submit" class="btn-generate" id="generateBtn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="12" rx="2" ry="2"></rect>
+                            <line x1="2" y1="20" x2="22" y2="20"></line>
+                        </svg>
+                        <span class="btn-text">Tạo Slide</span>
+                        <div class="btn-loading" style="display: none;">
+                            <div class="spinner"></div>
+                            <span>Đang tạo slide...</span>
+                        </div>
+                    </button>
+                    <div class="generate-info">
+                        <small>⏱️ Thời gian dự kiến: 2-5 phút</small>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast notification -->
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <script src="{{ url_for('static', filename='js/slide.js') }}"></script>
+</body>
+
+</html>
