@@ -4,7 +4,7 @@ import json
 import datetime
 from pathlib import Path
 from langgraph.graph import StateGraph, END
-from typing import TypedDict
+from typing import TypedDict, Dict, Any, Optional, List
 from bson import ObjectId
 from dotenv import load_dotenv
 
@@ -18,8 +18,18 @@ from modules.rag_module.data_chunking.processor import IntelligentVietnameseChun
 from modules.rag_module.data_embedding.embedding_processor import VietnameseEmbeddingProcessor
 from modules.rag_module.query_db.MongoDBClient import MongoDBClient
 from modules.rag_module.DeepRetrieval import OptimizedDeepRetrieval, DeepRetrieval
-from modules.lesson_plan.LessonPlanPipeline import LessonPlanPipeline
+
+# Fix import issue - sử dụng tên class nhất quán
+try:
+    from modules.lesson_plan.LessonPlanPipeline import LessonPlanPipeline
+except ImportError:
+    try:
+        from modules.lesson_plan.LessonPlanPipeline import LessonPlanPipeline as LessonPlanPipeline
+    except ImportError:
+        raise ImportError("Could not import LessonPlanPipeline or LessonPipeline from modules.lesson_plan.LessonPlanPipeline")
+
 from modules.quiz_plan.QuizPipeline import QuizPipeline
+from modules.slide_plan.SlidePipeline import SlidePipeline
 
 load_dotenv()
 
@@ -35,6 +45,36 @@ def clean_objectid(obj):
         return obj
 
 
+def _build_user_prompt(form_data: Dict[str, Any]) -> str:
+    """Tạo prompt từ form data"""
+    
+    parts = []
+    
+    # Thông tin cơ bản
+    if form_data.get("subject"):
+        parts.append(f"Môn học: {form_data['subject']}")
+    if form_data.get("grade"):
+        parts.append(f"Lớp: {form_data['grade']}")
+    if form_data.get("topic"):
+        parts.append(f"Chủ đề: {form_data['topic']}")
+    if form_data.get("duration"):
+        parts.append(f"Thời lượng: {form_data['duration']} phút")
+    
+    # Yêu cầu bổ sung
+    if form_data.get("additional_requirements"):
+        parts.append(f"Yêu cầu: {form_data['additional_requirements']}")
+        
+    # Phong cách và độ khó
+    if form_data.get("teaching_style"):
+        parts.append(f"Phong cách: {form_data['teaching_style']}")
+    if form_data.get("difficulty"):
+        parts.append(f"Độ khó: {form_data['difficulty']}")
+    if form_data.get("textbook"):
+        parts.append(f"Sách giáo khoa: {form_data['textbook']}")
+    
+    return "\n".join(parts) if parts else "Tạo nội dung giáo dục"
+
+
 # ========================= State =========================
 class FlowState(TypedDict):
     form_data: dict
@@ -48,10 +88,233 @@ class FlowState(TypedDict):
     filtered_chunks: list
     lesson_plan: dict
     quiz: dict
+    slide_plan: dict  # Thêm slide_plan
     output_path: str
     __skip__: bool
     __plan_done__: bool
     __quiz_done__: bool
+    __slide_done__: bool # Thêm cờ __slide_done__
+
+
+# ========================= Enhanced FlowState Class =========================
+class EnhancedFlowState:
+    """
+    State object để truyền dữ liệu giữa các pipeline
+    Tương thích với langgraph nếu cần mở rộng
+    """
+    def __init__(self, initial_data: Optional[Dict[str, Any]] = None):
+        self._data = initial_data or {}
+    
+    def get(self, key: str, default=None):
+        return self._data.get(key, default)
+    
+    def update(self, data: Dict[str, Any]):
+        self._data.update(data)
+    
+    def __getitem__(self, key):
+        return self._data[key]
+    
+    def __setitem__(self, key, value):
+        self._data[key] = value
+    
+    def __contains__(self, key):
+        return key in self._data
+    
+    def keys(self):
+        return self._data.keys()
+    
+    def items(self):
+        return self._data.items()
+    
+    def to_dict(self):
+        return self._data.copy()
+
+
+# ========================= Alternative Simple Flow =========================
+def run_simple_flow(form_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Flow đơn giản xử lý tạo nội dung giáo dục (không dùng langgraph)
+    
+    Args:
+        form_data: Dữ liệu từ form người dùng
+        
+    Returns:
+        Dict chứa kết quả các pipeline
+    """
+    print("🚀 [SIMPLE_FLOW] Starting education content generation flow...")
+    print(f"📋 [SIMPLE_FLOW] Form data: {form_data}")
+    
+    # Khởi tạo state
+    state = {
+        "form_data": form_data,
+        "user_prompt": _build_user_prompt(form_data),
+        "filtered_chunks": [],  # Có thể xử lý files ở đây nếu cần
+    }
+    
+    content_types = form_data.get("content_types", [])
+    print(f"🎯 [SIMPLE_FLOW] Requested content types: {content_types}")
+    
+    # Khởi tạo LLM client
+    try:
+        llm = GPTClient(
+            api_key=os.environ.get("AZURE_API_KEY"),
+            endpoint=os.environ.get("AZURE_ENDPOINT"),
+            model=os.environ.get("AZURE_MODEL"),
+            api_version=os.environ.get("AZURE_API_VERSION")
+        )
+        print("✅ [SIMPLE_FLOW] LLM client initialized")
+    except Exception as e:
+        print(f"❌ [SIMPLE_FLOW] Failed to initialize LLM: {e}")
+        return {"error": f"Failed to initialize LLM: {e}"}
+    
+    # ====== LESSON PLAN ======
+    if "lesson_plan" in content_types:
+        print("\n📚 [SIMPLE_FLOW] Processing lesson plan...")
+        try:
+            from modules.lesson_plan.LessonPlanPipeline import LessonPlanPipeline
+            lesson_pipeline = LessonPlanPipeline(llm)
+            lesson_result = lesson_pipeline(state)
+            state.update(lesson_result)
+            print("✅ [SIMPLE_FLOW] Lesson plan completed")
+        except Exception as e:
+            print(f"❌ [SIMPLE_FLOW] Lesson plan failed: {e}")
+            state["lesson_plan"] = {"error": str(e)}
+    
+    # ====== QUIZ ======
+    if "quiz" in content_types:
+        print("\n🧪 [SIMPLE_FLOW] Processing quiz...")
+        try:
+            quiz_pipeline = QuizPipeline(llm)
+            
+            # Tạo state phù hợp cho quiz pipeline
+            quiz_state = state.copy()
+            quiz_state.update({
+                "quiz_source": form_data.get("quiz_source", "material"),
+                "quiz_config": form_data.get("quiz_config", {}),
+            })
+            
+            quiz_result = quiz_pipeline(quiz_state)
+            state.update(quiz_result)
+            print("✅ [SIMPLE_FLOW] Quiz completed")
+        except Exception as e:
+            print(f"❌ [SIMPLE_FLOW] Quiz failed: {e}")
+            state["quiz"] = {"error": str(e)}
+    
+    # ====== SLIDE PLAN ======
+    if "slide_plan" in content_types:
+        print("\n🎬 [SIMPLE_FLOW] Processing slide plan...")
+        try:
+            slide_pipeline = SlidePipeline(llm)
+            
+            # Tạo state phù hợp cho slide pipeline  
+            slide_state = state.copy()
+            slide_state.update({
+                "slide_config": form_data.get("slide_config", {}),
+            })
+            
+            slide_result = slide_pipeline(slide_state)
+            state.update(slide_result)
+            print("✅ [SIMPLE_FLOW] Slide plan completed")
+        except Exception as e:
+            print(f"❌ [SIMPLE_FLOW] Slide plan failed: {e}")
+            state["slide_plan"] = {"error": str(e)}
+    
+    print("🏁 [SIMPLE_FLOW] Flow completed successfully")
+    return state
+
+
+# ========================= Slide Plan Node =========================
+class SlidePlanNode:
+    """Node xử lý slide plan trong flow"""
+    
+    def __init__(self, llm: GPTClient):
+        self.pipeline = SlidePipeline(llm)
+    
+    def __call__(self, state: EnhancedFlowState) -> Dict[str, Any]:
+        """Execute slide plan generation"""
+        print("\n🎬 Starting Slide Plan generation...")
+        
+        form = state.get("form_data", {})
+        content_types = form.get("content_types", [])
+        
+        if "slide_plan" not in content_types:
+            print("⭐ Skip slide plan (not requested)")
+            return {"slide_plan": {}, "__slide_done__": True}
+        
+        try:
+            # Get lesson plan if available for slide generation
+            lesson_plan = state.get("lesson_plan", {})
+            
+            if not lesson_plan:
+                print("⚠️ No lesson plan available for slide generation")
+                return {
+                    "slide_plan": {"error": "No lesson plan available for slide generation"}, 
+                    "__slide_done__": True
+                }
+            
+            # Use the pipeline's __call__ method
+            slide_result = self.pipeline(state)
+            
+            print("✅ Slide Plan generation completed!")
+            return slide_result
+            
+        except Exception as e:
+            error_msg = f"Error in slide plan generation: {str(e)}"
+            print(f"❌ {error_msg}")
+            return {
+                "slide_plan": {"error": error_msg}, 
+                "__slide_done__": True
+            }
+
+
+# ========================= Standalone Slide Creator =========================
+def create_slide_plan_standalone(
+    lesson_plan_content: str,
+    slide_config: Optional[Dict[str, Any]] = None,
+    llm: Optional[GPTClient] = None
+) -> Dict[str, Any]:
+    """
+    Tạo slide plan từ lesson plan content
+    
+    Args:
+        lesson_plan_content: Nội dung lesson plan (JSON string hoặc markdown)
+        slide_config: Cấu hình cho slide
+        llm: LLM client (tạo mới nếu không có)
+        
+    Returns:
+        Dict chứa kết quả slide plan
+    """
+    try:
+        if llm is None:
+            llm = GPTClient(
+                api_key=os.environ.get("AZURE_API_KEY"),
+                endpoint=os.environ.get("AZURE_ENDPOINT"),
+                model=os.environ.get("AZURE_MODEL"),
+                api_version=os.environ.get("AZURE_API_VERSION")
+            )
+        
+        slide_pipeline = SlidePipeline(llm)
+        
+        # Parse lesson plan nếu là string
+        if isinstance(lesson_plan_content, str):
+            try:
+                lesson_plan = json.loads(lesson_plan_content)
+            except json.JSONDecodeError:
+                # Nếu không phải JSON, coi như markdown content
+                lesson_plan = {"complete_markdown": lesson_plan_content}
+        else:
+            lesson_plan = lesson_plan_content
+        
+        # Tạo mock state
+        mock_state = EnhancedFlowState({
+            "lesson_plan": lesson_plan,
+            "form_data": {"slide_config": slide_config or {}},
+        })
+        
+        return slide_pipeline(mock_state)
+        
+    except Exception as e:
+        return {"slide_plan": {"error": str(e)}}
 
 
 # ========================= Nodes =========================
@@ -149,7 +412,7 @@ class FileProcessor:
                 continue
 
         if not all_standardized_chunks:
-            print("\n❌ Không có file nào được xử lý thành công")
+            print("\n⌛ Không có file nào được xử lý thành công")
             return {"__skip__": True, "search_chunks": [], "db_chunks": [], "all_chunks": []}
 
         print(f"\n🎉 Tổng cộng đã xử lý: {len(all_standardized_chunks)} chunks từ {len(files)} files")
@@ -168,7 +431,7 @@ class AgentBasedRetrieval:
         self.retriever = OptimizedDeepRetrieval()
 
     def __call__(self, state: FlowState):
-        print("🧠 [agent_retrieval] ĐÃ ĐƯỢC GỌI")
+        print("🧠 [agent_retrieval] ĐANG ĐƯỢC GỌI")
         prompt = state.get("user_prompt", "")
         subtopics = state.get("subtopics", [])
         if not prompt or not subtopics:
@@ -188,11 +451,17 @@ class EmbedAndStoreUploaded:
     def __call__(self, state: FlowState):
         chunks = state.get("uploaded_chunks", [])
         if not chunks:
-            print("\n Không có chunks để embedding (uploaded).")
+            print("\n❌ Không có chunks để embedding (uploaded).")
             return {}
-        file_path = state.get("source_file", "upload")
-        source_name = os.path.basename(file_path)
-        return embed_and_store_chunks(chunks, source_name)
+        
+        # Lấy source files từ state
+        source_files = state.get("source_files", ["upload"])
+        result = embed_and_store_chunks(chunks, source_files)
+        
+        # Debug log
+        print(f"🔍 [EmbedAndStoreUploaded] Returned keys: {list(result.keys())}")
+        
+        return result
 
 
 class EmbedAndStoreSearched:
@@ -201,7 +470,13 @@ class EmbedAndStoreSearched:
         if not chunks:
             print("\n❌ Không có chunks để embedding (searched).")
             return {}
-        return embed_and_store_chunks(chunks, "web_search")
+        
+        result = embed_and_store_chunks(chunks, "web_search")
+        
+        # Debug log  
+        print(f"🔍 [EmbedAndStoreSearched] Returned keys: {list(result.keys())}")
+        
+        return result
 
 
 def embed_and_store_chunks(chunks, source_files):
@@ -246,9 +521,11 @@ def embed_and_store_chunks(chunks, source_files):
         json.dump(cleaned, f, ensure_ascii=False, indent=2)
 
     print(f"\n📦 Đã lưu vào: {out_path}")
+    
+    # ===== FIX: SỬ DỤNG KEY RIÊNG CHO CHUNKS =====
     return {
         "embedded_chunks": embedded_chunks,
-        "output_path": out_path,
+        "chunks_output_path": out_path,  # Key riêng cho chunks, không phải output_path chung
     }
 
 
@@ -273,7 +550,7 @@ class FilterChunks:
             return {"filtered_chunks": chunks}
 
         if len(chunks) <= 5:
-            print(f"\nℹ️ Chỉ có {len(chunks)} chunks — bỏ qua bước lọc semantic.")
+            print(f"\nℹ️ Chỉ có {len(chunks)} chunks – bỏ qua bước lọc semantic.")
             return {"filtered_chunks": chunks}
 
         filtered = self.engine.filter(chunks, subtopics)
@@ -288,7 +565,7 @@ class GenerateLessonPlan:
     def __call__(self, state: FlowState):
         # Kiểm tra có cần tạo lesson plan không
         if not should_generate_lesson_plan(state):
-            print("⏭️ Skip tạo Lesson Plan (user không tick)")
+            print("⭐ Skip tạo Lesson Plan (user không tick)")
             return {"lesson_plan": {}, "__plan_done__": True}
         print("\n🎓 Bắt đầu tạo kế hoạch bài giảng...")
         prompt = state.get("user_prompt", "")
@@ -309,10 +586,10 @@ class GenerateQuiz:
     def __call__(self, state: FlowState):
         # Kiểm tra có cần tạo quiz không
         if not should_generate_quiz(state):
-            print("⏭️ Skip tạo Quiz (user không tick)")
+            print("⏭ Skip tạo Quiz (user không tick)")
             return {"quiz": {}, "__quiz_done__": True}
         
-        print("\n📝 Bắt đầu tạo Quiz...")
+        print("\n🧪 Bắt đầu tạo Quiz...")
         form = state.get("form_data", {}) or {}
         mode = form.get("quiz_source", "material")  # "material" | "plan"
         config = form.get("quiz_config", {})
@@ -344,10 +621,84 @@ class GenerateQuiz:
                 quiz = self.pipeline.create_full_quiz(prompt, filtered_chunks)
 
         print("✅ Hoàn thành tạo Quiz!")
-        if isinstance(quiz, dict) and "output_path" in quiz:
-            print(f"📁 Đã lưu quiz tại: {quiz['output_path']}")
 
-        return {"quiz": quiz, "__quiz_done__": True}
+        # ===== FIX: KHÔNG GHI ĐÈ output_path =====
+        # Giữ nguyên output_path từ embed_store nếu có
+        result = {"quiz": quiz, "__quiz_done__": True}
+        
+        # Chỉ cập nhật quiz_output_path riêng, không ghi đè output_path
+        if isinstance(quiz, dict) and "output_path" in quiz:
+            print(f"📁 Quiz đã lưu tại: {quiz['output_path']}")
+            result["quiz_output_path"] = quiz["output_path"]  # Lưu riêng
+            
+            # Debug: In ra để check
+            print(f"🔍 [DEBUG] Quiz output_path: {quiz['output_path']}")
+            print(f"🔍 [DEBUG] Current state output_path: {state.get('output_path', 'N/A')}")
+
+        return result
+
+
+class GenerateSlidePlan:
+    def __init__(self, llm: GPTClient):
+        self.pipeline = SlidePipeline(llm)
+
+    def __call__(self, state: FlowState):
+        # Kiểm tra có cần tạo slide plan không
+        if not should_generate_slide_plan(state):
+            print("⭐ Skip tạo Slide Plan (user không tick)")
+            return {"slide_plan": {}, "__slide_done__": True}
+
+        print("\n📊 Bắt đầu tạo Slide Plan...")
+        prompt = state.get("user_prompt", "")
+        lesson_plan = state.get("lesson_plan", {})
+
+        if not prompt:
+            return {"slide_plan": {"error": "Không có prompt để tạo slide"}, "__slide_done__": True}
+
+        # Kiểm tra lesson_plan có nội dung không
+        if not lesson_plan or not (lesson_plan.get("complete_markdown") or lesson_plan.get("markdown")):
+            print("⚠️  Không có nội dung Kế hoạch bài giảng hợp lệ để tạo slide.")
+            return {"slide_plan": {"error": "Cần có Kế hoạch bài giảng trước"}, "__slide_done__": True}
+
+        lesson_plan_content = (
+            lesson_plan.get("complete_markdown", "")
+            or lesson_plan.get("markdown", "")
+        )
+
+        form = state.get("form_data", {}) or {}
+        slide_config = form.get("slide_config", {}) or {
+            "color_scheme": "blue",
+            "export": {"pptx": True, "pdf": False}
+        }
+        
+        # Giả sử pipeline có phương thức này
+        slide_plan_result = self.pipeline.create_slide_from_lesson_plan(
+            lesson_plan_content=lesson_plan_content,
+            user_requirements=prompt,
+            slide_config=slide_config
+        )
+
+        print("✅ Hoàn thành tạo Slide Plan!")
+        if "json_path" in slide_plan_result:
+            print(f"📁 Đã lưu tại: {slide_plan_result['json_path']}")
+
+        return {"slide_plan": slide_plan_result, "__slide_done__": True}
+
+
+def should_generate_slide_plan(state: FlowState) -> bool:
+    """Kiểm tra có cần tạo slide plan không."""
+    form = state.get("form_data", {}) or {}
+    content_types = form.get("content_types", [])
+    
+    if not isinstance(content_types, list):
+        if isinstance(content_types, str):
+            content_types = [content_types]
+        else:
+            content_types = []
+    
+    should_generate = "slide_plan" in content_types
+    print(f"🤔 [should_generate_slide_plan] {should_generate} (from {content_types})")
+    return should_generate
 
 
 # ========================= Routing funcs =========================
@@ -364,9 +715,9 @@ def first_after_filter(state: FlowState):
     content_types = form.get("content_types", [])
     
     # DEBUG: In ra để kiểm tra
-    print(f"🔍 [DEBUG] form keys: {list(form.keys())}")
-    print(f"🔍 [DEBUG] content_types value: {content_types}")
-    print(f"🔍 [DEBUG] content_types type: {type(content_types)}")
+    print(f"📁 [DEBUG] form keys: {list(form.keys())}")
+    print(f"📁 [DEBUG] content_types value: {content_types}")
+    print(f"📁 [DEBUG] content_types type: {type(content_types)}")
     
     # Ensure content_types is a list
     if not isinstance(content_types, list):
@@ -374,15 +725,6 @@ def first_after_filter(state: FlowState):
             content_types = [content_types]
         else:
             content_types = []
-    
-    # Convert thành set để dễ so sánh
-    if isinstance(content_types, list):
-        outputs = set(content_types)
-    else:
-        print(f"⚠️ [WARNING] content_types không phải list: {content_types}")
-        outputs = set()
-    
-    print(f"🎯 [first_after_filter] User chọn: {outputs}")
     
     # Convert thành set để dễ so sánh
     outputs = set(content_types)
@@ -398,25 +740,38 @@ def first_after_filter(state: FlowState):
         print("✅ Chỉ tạo Quiz")
         return "generate_quiz"
     
-    # Case 3: Tạo cả hai - luôn tạo plan trước để quiz có thể sử dụng
+    # Case 3: Chỉ tạo slide plan - TẠO TRỰC TIẾP từ chunks
+    if outputs == {"slide_plan"}:
+        print("✅ Chỉ tạo Slide Plan từ materials")
+        return "generate_slide_plan"
+    
+    # Case 4: Tạo cả hai lesson_plan và quiz - luôn tạo plan trước để quiz có thể sử dụng
     if "lesson_plan" in outputs and "quiz" in outputs:
         print("✅ Tạo cả hai: Plan trước, Quiz sau")
         return "generate_lesson_plan"
     
-    # Fallback: mặc định tạo lesson plan nếu có lesson_plan
-    if "lesson_plan" in outputs:
-        print(f"⚠️ Fallback tạo lesson plan từ {outputs}")
+    # Case 5: Tạo lesson_plan và slide_plan
+    if "lesson_plan" in outputs and "slide_plan" in outputs:
+        print("✅ Tạo Lesson Plan trước, Slide Plan sau")
         return "generate_lesson_plan"
-    elif "quiz" in outputs:
-        print(f"⚠️ Fallback tạo quiz từ {outputs}")
+    
+    # Case 6: Tạo quiz và slide_plan
+    if "quiz" in outputs and "slide_plan" in outputs:
+        print("✅ Tạo Quiz trước, Slide Plan sau")
         return "generate_quiz"
-    else:
-        print(f"❌ Không có lựa chọn hợp lệ từ {outputs}, mặc định tạo lesson plan")
+    
+    # Case 7: Tạo cả ba
+    if "lesson_plan" in outputs and "quiz" in outputs and "slide_plan" in outputs:
+        print("✅ Tạo cả ba: Lesson Plan trước tiên")
         return "generate_lesson_plan"
+    
+    # Default case: Không có gì được chọn
+    print("⚠️ Không có content type nào được chọn")
+    return "END"
 
 
 def route_after_plan(state: FlowState):
-    """Sau generate_lesson_plan: kiểm tra còn cần quiz không."""
+    """Sau generate_lesson_plan: kiểm tra còn cần quiz hay slide_plan không."""
     form = state.get("form_data", {}) or {}
     content_types = form.get("content_types", [])
     
@@ -428,10 +783,15 @@ def route_after_plan(state: FlowState):
             content_types = []
     
     outputs = set(content_types)
-    print(f"🔄 [route_after_plan] Đã hoàn thành Plan. User chọn: {outputs}")
+    print(f"📄 [route_after_plan] Đã hoàn thành Plan. User chọn: {outputs}")
+    
+    # Nếu user có tick slide_plan và chưa làm slide_plan
+    if "slide_plan" in outputs and not state.get("__slide_done__"):
+        print("➡️ Tiếp tục tạo Slide Plan")
+        return "generate_slide_plan"
     
     # Nếu user có tick quiz và chưa làm quiz
-    if "quiz" in outputs and not state.get("__quiz_done__", False):
+    if "quiz" in outputs and not state.get("__quiz_done__"):
         print("➡️ Tiếp tục tạo Quiz")
         return "generate_quiz"
     
@@ -440,7 +800,7 @@ def route_after_plan(state: FlowState):
 
 
 def route_after_quiz(state: FlowState):
-    """Sau generate_quiz: kiểm tra còn cần plan không."""
+    """Sau generate_quiz: kiểm tra còn cần plan hay slide_plan không."""
     form = state.get("form_data", {}) or {}
     content_types = form.get("content_types", [])
     
@@ -452,15 +812,50 @@ def route_after_quiz(state: FlowState):
             content_types = []
     
     outputs = set(content_types)
-    print(f"🔄 [route_after_quiz] Đã hoàn thành Quiz. User chọn: {outputs}")
+    print(f"📄 [route_after_quiz] Đã hoàn thành Quiz. User chọn: {outputs}")
     
     # Nếu user có tick plan và chưa làm plan  
     if "lesson_plan" in outputs and not state.get("__plan_done__", False):
         print("➡️ Tiếp tục tạo Lesson Plan")
         return "generate_lesson_plan"
     
+    # Nếu user có tick slide_plan và chưa làm slide_plan
+    if "slide_plan" in outputs and not state.get("__slide_done__", False):
+        print("➡️ Tiếp tục tạo Slide Plan")
+        return "generate_slide_plan"
+    
     print("🏁 Hoàn thành - chỉ cần Quiz")
     return "END"
+
+
+def route_after_slide_plan(state: FlowState):
+    """Sau generate_slide_plan: kiểm tra còn cần plan hay quiz không."""
+    form = state.get("form_data", {}) or {}
+    content_types = form.get("content_types", [])
+    
+    # Ensure it's a list
+    if not isinstance(content_types, list):
+        if isinstance(content_types, str):
+            content_types = [content_types]
+        else:
+            content_types = []
+    
+    outputs = set(content_types)
+    print(f"📄 [route_after_slide_plan] Đã hoàn thành Slide Plan. User chọn: {outputs}")
+    
+    # Nếu user có tick plan và chưa làm plan  
+    if "lesson_plan" in outputs and not state.get("__plan_done__", False):
+        print("➡️ Tiếp tục tạo Lesson Plan")
+        return "generate_lesson_plan"
+    
+    # Nếu user có tick quiz và chưa làm quiz
+    if "quiz" in outputs and not state.get("__quiz_done__", False):
+        print("➡️ Tiếp tục tạo Quiz")
+        return "generate_quiz"
+    
+    print("🏁 Hoàn thành - chỉ cần Slide Plan")
+    return "END"
+
 
 ##Skip Logic
 def should_generate_lesson_plan(state: FlowState):
@@ -478,6 +873,7 @@ def should_generate_lesson_plan(state: FlowState):
     print(f"🤔 [should_generate_lesson_plan] {should_generate} (from {content_types})")
     return should_generate
 
+
 def should_generate_quiz(state: FlowState):
     """Kiểm tra có cần tạo quiz không."""  
     form = state.get("form_data", {}) or {}
@@ -492,6 +888,7 @@ def should_generate_quiz(state: FlowState):
     should_generate = "quiz" in content_types
     print(f"🤔 [should_generate_quiz] {should_generate} (from {content_types})")
     return should_generate
+
 
 # ========================= LLMs =========================
 llm = GPTClient(
@@ -520,6 +917,7 @@ builder.add_node("embed_store_searched", EmbedAndStoreSearched())
 builder.add_node("filter_chunks", FilterChunks())
 builder.add_node("generate_lesson_plan", GenerateLessonPlan(llm))
 builder.add_node("generate_quiz", GenerateQuiz(llm))
+builder.add_node("generate_slide_plan", GenerateSlidePlan(llm))
 
 builder.set_entry_point("generate_prompt")
 
@@ -541,26 +939,89 @@ builder.add_edge("embed_store_searched", "filter_chunks")
 # Decide which product first
 builder.add_conditional_edges(
     "filter_chunks", first_after_filter,
-    {"generate_lesson_plan": "generate_lesson_plan", "generate_quiz": "generate_quiz"}
+    {
+        "generate_lesson_plan": "generate_lesson_plan", 
+        "generate_quiz": "generate_quiz",
+        "generate_slide_plan": "generate_slide_plan",
+        "END": END
+    }
 )
 
-# After plan -> maybe quiz / end
+# After plan -> maybe quiz/slide_plan/end
 builder.add_conditional_edges(
     "generate_lesson_plan", route_after_plan,
-    {"generate_quiz": "generate_quiz", "END": END}
+    {
+        "generate_quiz": "generate_quiz", 
+        "generate_slide_plan": "generate_slide_plan",
+        "END": END
+    }
 )
 
-# After quiz -> maybe plan / end
+# After quiz -> maybe plan/slide_plan/end
 builder.add_conditional_edges(
     "generate_quiz", route_after_quiz,
-    {"generate_lesson_plan": "generate_lesson_plan", "END": END}
+    {
+        "generate_lesson_plan": "generate_lesson_plan", 
+        "generate_slide_plan": "generate_slide_plan",
+        "END": END
+    }
+)
+
+# After slide_plan -> maybe plan/quiz/end
+builder.add_conditional_edges(
+    "generate_slide_plan", route_after_slide_plan,
+    {
+        "generate_lesson_plan": "generate_lesson_plan",
+        "generate_quiz": "generate_quiz", 
+        "END": END
+    }
 )
 
 # ========================= Compile & Run =========================
 graph = builder.compile()
 
+
 def run_flow(form_data: dict):
+    """Main function để chạy langgraph flow"""
     result = graph.invoke({"form_data": form_data})
+    return result
+
+
+# ========================= Test Function =========================
+def test_slide_generation():
+    """Test function để kiểm tra slide generation"""
+    test_data = {
+        "grade": "10",
+        "subject": "Toán",
+        "topic": "Phương trình bậc 2", 
+        "duration": "45",
+        "content_types": ["lesson_plan", "slide_plan"],
+        "teaching_style": "interactive",
+        "difficulty": "medium",
+        "slide_config": {
+            "color_scheme": "blue",
+            "export": {"pptx": True, "pdf": False}
+        }
+    }
+    
+    print("🧪 Testing slide generation...")
+    result = run_flow(test_data)
+    
+    print("\n" + "="*50)
+    print("TEST RESULT:")
+    print("="*50)
+    
+    if "lesson_plan" in result:
+        print("✅ Lesson Plan generated successfully")
+        
+    if "slide_plan" in result:
+        if "error" in result["slide_plan"]:
+            print(f"❌ Slide Plan generation failed: {result['slide_plan']['error']}")
+        else:
+            print("✅ Slide Plan generated successfully")
+            if "json_path" in result["slide_plan"]:
+                print(f"📁 Slide saved at: {result['slide_plan']['json_path']}")
+    
     return result
 
 
@@ -583,3 +1044,16 @@ except Exception as e:
             print(graph.get_graph().get_graph().to_string())
         except Exception as dot_e:
             print(f"Không thể lấy DOT string: {dot_e}")
+
+
+# ========================= Main Execution =========================
+if __name__ == "__main__":
+    print("🚀 EduMate Flow with Slide Generation Ready!")
+    print("\nAvailable functions:")
+    print("- run_flow(form_data): Main langgraph flow")
+    print("- run_simple_flow(form_data): Simplified flow without langgraph")
+    print("- create_slide_plan_standalone(lesson_content, config): Create slides from lesson plan")
+    print("- test_slide_generation(): Test slide generation functionality")
+    
+    # Uncomment to run test
+    # test_slide_generation()

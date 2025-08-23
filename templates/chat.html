@@ -4,23 +4,75 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Chat - Edu Mate</title>
+  <title>Chat - Learn Craft</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css') }}?v=20250814" />
 
-  <!-- MathJax v3: hiển thị LaTeX trong Markdown -->
+  <!-- MathJax v3: chỉ load MỘT version duy nhất -->
   <script>
     window.MathJax = {
       tex: {
-        inlineMath: [['$', '$'], ['\\(', '\\)']],
-        displayMath: [['$$', '$$'], ['\\[', '\\]']],
-        processEscapes: true
+        inlineMath: [['\\(', '\\)'], ['$', '$']],
+        displayMath: [['\\[', '\\]'], ['$$', '$$']],
+        processEscapes: true,
+        processEnvironments: true,
+        packages: ['base', 'ams', 'noerrors', 'noundefined']
       },
       options: {
-        skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+        processHtmlClass: 'tex2jax_process',
+        ignoreHtmlClass: 'tex2jax_ignore'
+      },
+      startup: {
+        typeset: false,
+        ready: () => {
+          MathJax.startup.defaultReady();
+          console.log('✅ MathJax loaded and ready');
+          window.dispatchEvent(new CustomEvent('mathjax-ready'));
+        }
       }
     };
   </script>
+  <!-- CHỈ LOAD MỘT VERSION MATHJAX -->
   <script id="mathjax" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+
+  <!-- Custom styles for better LaTeX rendering -->
+  <style>
+    .MathJax {
+      font-size: 1em !important;
+    }
+
+    .doc .MathJax {
+      margin: 0.2em 0 !important;
+    }
+
+    .mjx-math {
+      color: #1f2937 !important;
+    }
+
+    .mjx-chtml.MJXc-display {
+      text-align: center;
+      margin: 1em 0;
+    }
+
+    .math-formula {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 12px;
+      margin: 10px 0;
+      text-align: center;
+    }
+
+    .slide-content .MathJax {
+      font-size: 1.1em !important;
+    }
+
+    .content-loading {
+      opacity: 0.6;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+  </style>
 </head>
 
 <body>
@@ -38,7 +90,7 @@
     <!-- Cột Chat -->
     <div class="col col-chat">
       <div class="chat-container">
-        <div class="chat-messages" id="chatMessages">
+        <div class="chat-messages tex2jax_process" id="chatMessages">
           <div class="message ai">
             <div class="message-avatar">🤖</div>
             <div class="message-content">
@@ -75,30 +127,24 @@
       </div>
     </div>
 
-    <!-- Cột Panel (dùng chung cho Plan / Quiz Markdown) -->
+    <!-- Cột Panel -->
     <div class="col col-panel" id="panelCol">
       <section id="planPanel" class="plan-panel" aria-hidden="true">
         <div class="plan-panel__header">
-          
           <div class="plan-panel__title" id="planPanelTitle"></div>
           <div class="plan-panel__actions">
             <a id="panelDownloadLink" class="btn ghost" href="#" target="_blank" rel="noopener" style="display:none;">⬇️
               Tải về</a>
             <button class="btn ghost" onclick="copyPanelContent()">📋 Sao chép</button>
-
-            <!-- Chỉnh sửa trực tiếp trong panel -->
             <button class="btn primary" id="panelEditBtn" onclick="togglePanelEdit()">✏️ Chỉnh sửa</button>
             <button class="btn primary" id="panelSaveBtn" onclick="savePanelEdit()" style="display:none;">💾
               Lưu</button>
-            <button class="btn" id="panelCancelBtn" onclick="togglePanelEdit(false)" style="display:none;">↩︎
-              Huỷ</button>
-
-              
+            <button class="btn" id="panelCancelBtn" onclick="togglePanelEdit(false)" style="display:none;">↩️
+              Hủy</button>
             <button class="btn close-btn" onclick="closePlanPanel()">✕</button>
           </div>
         </div>
-
-        <div class="plan-panel__body" id="planPanelBody">
+        <div class="plan-panel__body tex2jax_process" id="planPanelBody">
           <div class="doc" style="color:#9ca3af;">Chưa có nội dung để hiển thị</div>
         </div>
       </section>
@@ -108,6 +154,7 @@
   <!-- Libs render Markdown -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+  <!-- BỎ DÒNG NÀY VÌ ĐÃ LOAD Ở TRÊN: <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script> -->
 
   <!-- Dữ liệu server inject -->
   <script type="application/json" id="eduForm">{{ form_data | tojson | safe }}</script>
@@ -115,8 +162,12 @@
   <script type="application/json" id="mdDownload">{{ md_download_url | tojson | safe }}</script>
   <script type="application/json" id="quizContent">{{ quiz_content | tojson | safe }}</script>
   <script type="application/json" id="quizDownload">{{ quiz_download_url | tojson | safe }}</script>
+  <script type="application/json" id="slideContent">{{ slide_content | tojson | safe }}</script>
+  <script type="application/json" id="slideDownload">{{ slide_download_url | tojson | safe }}</script>
 
+  <!-- Script chính -->
   <script src="{{ url_for('static', filename='js/chat.js') }}?v=20250814"></script>
+
 </body>
 
 </html>

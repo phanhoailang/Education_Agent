@@ -1,258 +1,419 @@
 <!DOCTYPE html>
 <html lang="vi">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tạo Slide - Edu Mate</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/slide.css') }}">
+    <title>Tạo Slide - EduMate</title>
+    <link rel="stylesheet" href="css/slide.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 </head>
-
 <body>
-    <div class="header">
-        <div class="header-left">
-            <a class="btn ghost" href="/lessonplan">← Về Lesson Plan</a>
-            <h2>🎨 Tạo Slide từ Kế hoạch Bài giảng</h2>
-        </div>
-        <div class="status-indicator">
-            <div class="status-dot"></div>
-            <span>Sẵn sàng</span>
-        </div>
-    </div>
-
-    <div class="main-container">
-        <!-- Left Panel - Lesson Plan Info -->
-        <div class="left-panel">
-            <div class="lesson-info">
-                <h3>📚 Thông tin bài giảng</h3>
-                <div class="info-card">
-                    <div class="info-item">
-                        <label>Tiêu đề:</label>
-                        <span id="lessonTitle">Đang tải...</span>
+    <!-- Header --> 
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <i class="fas fa-presentation-screen"></i>
                     </div>
-                    <div class="info-item">
-                        <label>Môn học:</label>
-                        <span id="lessonSubject">-</span>
-                    </div>
-                    <div class="info-item">
-                        <label>Lớp:</label>
-                        <span id="lessonGrade">-</span>
-                    </div>
-                    <div class="info-item">
-                        <label>Thời gian:</label>
-                        <span id="lessonDuration">-</span>
-                    </div>
+                    <h1>EduMate Slides</h1>
                 </div>
-            </div>
-
-            <!-- Preview -->
-            <div class="preview-section">
-                <h4>👁️ Preview slide</h4>
-                <div class="slide-preview" id="slidePreview">
-                    <div class="preview-slide">
-                        <div class="preview-header">
-                            <h5>Slide mẫu</h5>
-                        </div>
-                        <div class="preview-content">
-                            <p>Nội dung sẽ hiển thị ở đây...</p>
-                        </div>
-                    </div>
-                </div>
+                <nav class="nav">
+                    <a href="/form" class="nav-link">
+                        <i class="fas fa-arrow-left"></i>
+                        Quay lại
+                    </a>
+                </nav>
             </div>
         </div>
+    </header>
 
-        <!-- Right Panel - Configuration -->
-        <div class="right-panel">
-            <form id="slideConfigForm">
-                <!-- Style Selection -->
-                <div class="config-section">
-                    <h3>🎨 Style Template</h3>
-                    <div class="style-grid">
-                        <div class="style-card active" data-style="modern">
-                            <div class="style-preview modern-preview"></div>
-                            <span>Modern</span>
-                        </div>
-                        <div class="style-card" data-style="classic">
-                            <div class="style-preview classic-preview"></div>
-                            <span>Classic</span>
-                        </div>
-                        <div class="style-card" data-style="minimal">
-                            <div class="style-preview minimal-preview"></div>
-                            <span>Minimal</span>
-                        </div>
-                        <div class="style-card" data-style="creative">
-                            <div class="style-preview creative-preview"></div>
-                            <span>Creative</span>
-                        </div>
-                    </div>
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+            <!-- Hero Section -->
+            <section class="hero">
+                <div class="hero-content">
+                    <h2 class="hero-title">
+                        <i class="fas fa-magic"></i>
+                        Tạo Slide Tự Động
+                    </h2>
+                    <p class="hero-subtitle">
+                        Chuyển đổi kế hoạch bài giảng thành slide trình bày chuyên nghiệp trong vài phút
+                    </p>
                 </div>
+            </section>
 
-                <!-- Slide Count -->
-                <div class="config-section">
-                    <h3>📄 Số lượng slide</h3>
-                    <div class="slide-count-control">
-                        <button type="button" class="count-btn" onclick="changeSlideCount(-1)">-</button>
-                        <input type="number" id="slideCount" value="10" min="3" max="50">
-                        <button type="button" class="count-btn" onclick="changeSlideCount(1)">+</button>
-                    </div>
-                    <div class="count-info">
-                        <span>Khuyến nghị: 8-15 slide cho bài 45 phút</span>
-                    </div>
-                </div>
+            <!-- Slide Creation Form -->
+            <section class="form-section">
+                <div class="form-container">
+                    <form id="slideForm" class="slide-form" enctype="multipart/form-data">
+                        <!-- Basic Settings -->
+                        <div class="form-group-title">
+                            <i class="fas fa-cog"></i>
+                            <h3>Cài đặt cơ bản</h3>
+                        </div>
 
-                <!-- Color Theme -->
-                <div class="config-section">
-                    <h3>🎨 Tone màu</h3>
-                    <div class="color-grid">
-                        <div class="color-option active" data-color="blue">
-                            <div class="color-circle" style="background: linear-gradient(45deg, #3b82f6, #1d4ed8);"></div>
-                            <span>Xanh dương</span>
-                        </div>
-                        <div class="color-option" data-color="green">
-                            <div class="color-circle" style="background: linear-gradient(45deg, #10b981, #059669);"></div>
-                            <span>Xanh lá</span>
-                        </div>
-                        <div class="color-option" data-color="purple">
-                            <div class="color-circle" style="background: linear-gradient(45deg, #8b5cf6, #7c3aed);"></div>
-                            <span>Tím</span>
-                        </div>
-                        <div class="color-option" data-color="orange">
-                            <div class="color-circle" style="background: linear-gradient(45deg, #f59e0b, #d97706);"></div>
-                            <span>Cam</span>
-                        </div>
-                        <div class="color-option" data-color="red">
-                            <div class="color-circle" style="background: linear-gradient(45deg, #ef4444, #dc2626);"></div>
-                            <span>Đỏ</span>
-                        </div>
-                        <div class="color-option" data-color="gray">
-                            <div class="color-circle" style="background: linear-gradient(45deg, #6b7280, #4b5563);"></div>
-                            <span>Xám</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Font Settings -->
-                <div class="config-section">
-                    <h3>🔤 Font chữ</h3>
-                    <div class="font-options">
-                        <select id="fontFamily">
-                            <option value="inter">Inter (Hiện đại)</option>
-                            <option value="roboto">Roboto (Dễ đọc)</option>
-                            <option value="open-sans">Open Sans (Truyền thống)</option>
-                            <option value="montserrat">Montserrat (Sang trọng)</option>
-                        </select>
-                        <div class="font-size-control">
-                            <label>Kích thước chữ:</label>
-                            <input type="range" id="fontSize" min="12" max="24" value="16">
-                            <span id="fontSizeValue">16px</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Layout Options -->
-                <div class="config-section">
-                    <h3>📐 Bố cục</h3>
-                    <div class="layout-options">
-                        <div class="layout-card active" data-layout="standard">
-                            <div class="layout-preview">
-                                <div class="layout-header"></div>
-                                <div class="layout-content"></div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="slideCount" class="label">
+                                    <i class="fas fa-layer-group"></i>
+                                    Số lượng slide
+                                </label>
+                                <div class="input-wrapper">
+                                    <input 
+                                        type="number" 
+                                        id="slideCount" 
+                                        name="slideCount" 
+                                        class="input" 
+                                        value="10" 
+                                        min="5" 
+                                        max="30"
+                                    >
+                                    <div class="input-hint">5-30 slide</div>
+                                </div>
                             </div>
-                            <span>Chuẩn</span>
-                        </div>
-                        <div class="layout-card" data-layout="sidebar">
-                            <div class="layout-preview">
-                                <div class="layout-sidebar"></div>
-                                <div class="layout-main"></div>
+
+                            <div class="form-group">
+                                <label for="slideStyle" class="label">
+                                    <i class="fas fa-palette"></i>
+                                    Phong cách thiết kế
+                                </label>
+                                <select id="slideStyle" name="slideStyle" class="select">
+                                    <option value="modern">Hiện đại</option>
+                                    <option value="professional">Chuyên nghiệp</option>
+                                    <option value="creative">Sáng tạo</option>
+                                    <option value="classic">Cổ điển</option>
+                                    <option value="minimalist">Tối giản</option>
+                                    <option value="colorful">Đầy màu sắc</option>
+                                </select>
                             </div>
-                            <span>Thanh bên</span>
-                        </div>
-                        <div class="layout-card" data-layout="split">
-                            <div class="layout-preview">
-                                <div class="layout-left"></div>
-                                <div class="layout-right"></div>
+
+                            <div class="form-group">
+                                <label for="colorScheme" class="label">
+                                    <i class="fas fa-paint-brush"></i>
+                                    Bảng màu
+                                </label>
+                                <div class="color-options">
+                                    <input type="radio" id="blue" name="colorScheme" value="blue" checked>
+                                    <label for="blue" class="color-option blue">
+                                        <span class="color-preview"></span>
+                                        <span>Xanh</span>
+                                    </label>
+                                    
+                                    <input type="radio" id="green" name="colorScheme" value="green">
+                                    <label for="green" class="color-option green">
+                                        <span class="color-preview"></span>
+                                        <span>Lục</span>
+                                    </label>
+                                    
+                                    <input type="radio" id="purple" name="colorScheme" value="purple">
+                                    <label for="purple" class="color-option purple">
+                                        <span class="color-preview"></span>
+                                        <span>Tím</span>
+                                    </label>
+                                    
+                                    <input type="radio" id="orange" name="colorScheme" value="orange">
+                                    <label for="orange" class="color-option orange">
+                                        <span class="color-preview"></span>
+                                        <span>Cam</span>
+                                    </label>
+                                    
+                                    <input type="radio" id="red" name="colorScheme" value="red">
+                                    <label for="red" class="color-option red">
+                                        <span class="color-preview"></span>
+                                        <span>Đỏ</span>
+                                    </label>
+                                    
+                                    <input type="radio" id="gray" name="colorScheme" value="gray">
+                                    <label for="gray" class="color-option gray">
+                                        <span class="color-preview"></span>
+                                        <span>Xám</span>
+                                    </label>
+                                </div>
                             </div>
-                            <span>Chia đôi</span>
+
+                            <div class="form-group">
+                                <label class="label">
+                                    <i class="fas fa-download"></i>
+                                    Định dạng xuất
+                                </label>
+                                <div class="checkbox-grid">
+                                    <label class="checkbox-item">
+                                        <input type="checkbox" name="exportFormat" value="pptx" checked>
+                                        <span class="checkbox-custom"></span>
+                                        <i class="fab fa-microsoft"></i>
+                                        PowerPoint (PPTX)
+                                    </label>
+                                    <label class="checkbox-item">
+                                        <input type="checkbox" name="exportFormat" value="pdf">
+                                        <span class="checkbox-custom"></span>
+                                        <i class="fas fa-file-pdf"></i>
+                                        PDF
+                                    </label>
+                                    <label class="checkbox-item">
+                                        <input type="checkbox" name="exportFormat" value="html" checked>
+                                        <span class="checkbox-custom"></span>
+                                        <i class="fas fa-code"></i>
+                                        HTML Preview
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Advanced Settings -->
+                        <div class="form-group-title">
+                            <i class="fas fa-magic"></i>
+                            <h3>Tùy chọn nâng cao</h3>
+                            <button type="button" class="toggle-advanced" id="toggleAdvanced">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                        </div>
+
+                        <div class="advanced-section" id="advancedSection">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label class="label">
+                                        <i class="fas fa-magic"></i>
+                                        Hiệu ứng chuyển cảnh
+                                    </label>
+                                    <div class="checkbox-grid">
+                                        <label class="checkbox-item">
+                                            <input type="checkbox" name="transitions" value="fade" checked>
+                                            <span class="checkbox-custom"></span>
+                                            <i class="fas fa-adjust"></i>
+                                            Fade
+                                        </label>
+                                        <label class="checkbox-item">
+                                            <input type="checkbox" name="transitions" value="slide">
+                                            <span class="checkbox-custom"></span>
+                                            <i class="fas fa-arrows-alt-h"></i>
+                                            Slide
+                                        </label>
+                                        <label class="checkbox-item">
+                                            <input type="checkbox" name="transitions" value="zoom">
+                                            <span class="checkbox-custom"></span>
+                                            <i class="fas fa-search-plus"></i>
+                                            Zoom
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="label">
+                                        <i class="fas fa-image"></i>
+                                        Tự động thêm hình ảnh
+                                    </label>
+                                    <div class="toggle-switch">
+                                        <input type="checkbox" id="autoImages" name="autoImages" checked>
+                                        <label for="autoImages" class="switch">
+                                            <span class="slider"></span>
+                                        </label>
+                                        <span class="toggle-text">Bật tự động tìm và thêm ảnh minh họa</span>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="speakerNotes" class="label">
+                                        <i class="fas fa-microphone"></i>
+                                        Speaker Notes
+                                    </label>
+                                    <div class="toggle-switch">
+                                        <input type="checkbox" id="speakerNotes" name="speakerNotes" checked>
+                                        <label for="speakerNotes" class="switch">
+                                            <span class="slider"></span>
+                                        </label>
+                                        <span class="toggle-text">Tạo ghi chú cho giáo viên</span>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="animationLevel" class="label">
+                                        <i class="fas fa-play"></i>
+                                        Mức độ animation
+                                    </label>
+                                    <select id="animationLevel" name="animationLevel" class="select">
+                                        <option value="none">Không có</option>
+                                        <option value="basic" selected>Cơ bản</option>
+                                        <option value="advanced">Nâng cao</option>
+                                        <option value="dynamic">Động lực</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="fontStyle" class="label">
+                                        <i class="fas fa-font"></i>
+                                        Kiểu chữ
+                                    </label>
+                                    <select id="fontStyle" name="fontStyle" class="select">
+                                        <option value="modern">Hiện đại (Segoe UI, Arial)</option>
+                                        <option value="classic">Cổ điển (Times, Georgia)</option>
+                                        <option value="friendly">Thân thiện (Open Sans, Roboto)</option>
+                                        <option value="bold">Mạnh mẽ (Montserrat, Oswald)</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="templateCustomization" class="label">
+                                        <i class="fas fa-edit"></i>
+                                        Tùy chỉnh template
+                                    </label>
+                                    <textarea 
+                                        id="templateCustomization" 
+                                        name="templateCustomization" 
+                                        class="textarea"
+                                        placeholder="VD: Thêm logo trường học, sử dụng nhiều hình ảnh, tập trung vào biểu đồ..."
+                                        rows="3"
+                                    ></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Source Content -->
+                        <div class="form-group-title">
+                            <i class="fas fa-file-import"></i>
+                            <h3>Nội dung nguồn</h3>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="label">
+                                <i class="fas fa-upload"></i>
+                                Chọn nguồn nội dung
+                            </label>
+                            <div class="content-source-tabs">
+                                <button type="button" class="tab-btn active" data-tab="lesson-plan">
+                                    <i class="fas fa-book"></i>
+                                    Từ kế hoạch bài giảng
+                                </button>
+                                <button type="button" class="tab-btn" data-tab="manual-input">
+                                    <i class="fas fa-keyboard"></i>
+                                    Nhập thủ công
+                                </button>
+                                <button type="button" class="tab-btn" data-tab="file-upload">
+                                    <i class="fas fa-file-upload"></i>
+                                    Upload file
+                                </button>
+                            </div>
+
+                            <div class="tab-content active" id="lesson-plan">
+                                <div class="lesson-plan-selector">
+                                    <select id="existingLessonPlan" name="existingLessonPlan" class="select">
+                                        <option value="">Chọn kế hoạch bài giảng có sẵn</option>
+                                        <option value="recent-1">Bài giảng Toán lớp 7 - Phương trình bậc nhất</option>
+                                        <option value="recent-2">Bài giảng Sinh học lớp 8 - Quang hợp</option>
+                                        <option value="recent-3">Bài giảng Văn lớp 9 - Phân tích tác phẩm</option>
+                                    </select>
+                                    <div class="or-divider">
+                                        <span>hoặc</span>
+                                    </div>
+                                    <button type="button" class="btn-secondary" id="createNewLesson">
+                                        <i class="fas fa-plus"></i>
+                                        Tạo kế hoạch mới
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="tab-content" id="manual-input">
+                                <textarea 
+                                    name="manualContent" 
+                                    class="textarea"
+                                    placeholder="Nhập nội dung bài giảng của bạn...&#10;&#10;VD:&#10;Chủ đề: Phương trình bậc nhất&#10;Mục tiêu:&#10;- Hiểu khái niệm phương trình bậc nhất&#10;- Giải được phương trình bậc nhất cơ bản&#10;&#10;Nội dung chính:&#10;1. Khái niệm&#10;2. Các bước giải..."
+                                    rows="10"
+                                ></textarea>
+                            </div>
+
+                            <div class="tab-content" id="file-upload">
+                                <div class="file-upload-zone" id="fileUploadZone">
+                                    <input type="file" id="slideSourceFiles" name="slideSourceFiles[]" multiple accept=".pdf,.doc,.docx,.ppt,.pptx,.txt">
+                                    <div class="upload-content">
+                                        <i class="fas fa-cloud-upload-alt"></i>
+                                        <p>Kéo thả hoặc click để chọn file</p>
+                                        <small>Hỗ trợ: PDF, Word, PowerPoint, Text</small>
+                                    </div>
+                                    <div class="file-list" id="slideFileList"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="form-actions">
+                            <button type="button" class="btn-secondary" id="previewBtn">
+                                <i class="fas fa-eye"></i>
+                                Xem trước
+                            </button>
+                            <button type="submit" class="btn-primary" id="createSlideBtn">
+                                <i class="fas fa-magic"></i>
+                                <span class="btn-text">Tạo Slide</span>
+                                <div class="btn-loading">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                    Đang tạo...
+                                </div>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Progress Section (Hidden initially) -->
+            <section class="progress-section" id="progressSection" style="display: none;">
+                <div class="progress-container">
+                    <h3>
+                        <i class="fas fa-cogs"></i>
+                        Đang tạo slide...
+                    </h3>
+                    <div class="progress-steps">
+                        <div class="step active" id="step1">
+                            <div class="step-icon">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                            <div class="step-content">
+                                <h4>Phân tích nội dung</h4>
+                                <p>Đang đọc và phân tích kế hoạch bài giảng...</p>
+                            </div>
+                        </div>
+                        <div class="step" id="step2">
+                            <div class="step-icon">
+                                <i class="fas fa-sitemap"></i>
+                            </div>
+                            <div class="step-content">
+                                <h4>Tạo cấu trúc slide</h4>
+                                <p>Đang xây dựng outline và bố cục slide...</p>
+                            </div>
+                        </div>
+                        <div class="step" id="step3">
+                            <div class="step-icon">
+                                <i class="fas fa-paint-brush"></i>
+                            </div>
+                            <div class="step-content">
+                                <h4>Thiết kế giao diện</h4>
+                                <p>Đang áp dụng màu sắc và phong cách...</p>
+                            </div>
+                        </div>
+                        <div class="step" id="step4">
+                            <div class="step-icon">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <div class="step-content">
+                                <h4>Hoàn thành</h4>
+                                <p>Đang xuất file và tạo liên kết...</p>
+                            </div>
                         </div>
                     </div>
-                </div>
-
-                <!-- Output Format -->
-                <div class="config-section">
-                    <h3>📤 Định dạng xuất</h3>
-                    <div class="format-options">
-                        <label class="format-radio">
-                            <input type="radio" name="format" value="pptx" checked>
-                            <span class="format-label">
-                                <strong>PowerPoint (.pptx)</strong>
-                                <small>Tương thích Microsoft PowerPoint</small>
-                            </span>
-                        </label>
-                        <label class="format-radio">
-                            <input type="radio" name="format" value="html">
-                            <span class="format-label">
-                                <strong>HTML Presentation</strong>
-                                <small>Chạy trên trình duyệt web</small>
-                            </span>
-                        </label>
-                        <label class="format-radio">
-                            <input type="radio" name="format" value="pdf">
-                            <span class="format-label">
-                                <strong>PDF Document</strong>
-                                <small>Định dạng tài liệu không thay đổi</small>
-                            </span>
-                        </label>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
                     </div>
                 </div>
-
-                <!-- Advanced Options -->
-                <div class="config-section">
-                    <h3>⚙️ Tùy chọn nâng cao</h3>
-                    <div class="advanced-options">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="includeNotes" checked>
-                            <span>Bao gồm ghi chú giảng viên</span>
-                        </label>
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="includeQuestions">
-                            <span>Tự động thêm câu hỏi kiểm tra</span>
-                        </label>
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="includeImages">
-                            <span>Tự động tìm hình ảnh minh họa</span>
-                        </label>
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="includeAnimations">
-                            <span>Thêm hiệu ứng chuyển slide</span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Generate Button -->
-                <div class="generate-section">
-                    <button type="submit" class="btn-generate" id="generateBtn">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="4" width="18" height="12" rx="2" ry="2"></rect>
-                            <line x1="2" y1="20" x2="22" y2="20"></line>
-                        </svg>
-                        <span class="btn-text">Tạo Slide</span>
-                        <div class="btn-loading" style="display: none;">
-                            <div class="spinner"></div>
-                            <span>Đang tạo slide...</span>
-                        </div>
-                    </button>
-                    <div class="generate-info">
-                        <small>⏱️ Thời gian dự kiến: 2-5 phút</small>
-                    </div>
-                </div>
-            </form>
+            </section>
         </div>
-    </div>
+    </main>
 
-    <!-- Toast notification -->
-    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 EduMate. Công cụ tạo nội dung giáo dục thông minh.</p>
+        </div>
+    </footer>
 
-    <script src="{{ url_for('static', filename='js/slide.js') }}"></script>
+    <script src="js/slide.js"></script>
 </body>
-
 </html>

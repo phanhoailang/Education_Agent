@@ -3,3 +3,5 @@ __pycache__/
 *.pyc
 temp_*/
 output_*/
+!output_quizzes/
+output_slides/
